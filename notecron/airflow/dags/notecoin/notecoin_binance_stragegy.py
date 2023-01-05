@@ -25,7 +25,7 @@ def sell_auto():
 with DAG("notecoin-binance-strategy", description="notecoin",
          default_args={"owner": "bingtao", "start_date": datetime(2022, 12, 15)},
          schedule_interval='*/5 * * * *',
-         catchup=True) as dag:
+         ) as dag:
     
     t2 = PythonOperator(dag=dag,
                         task_id='refresh-markets',
@@ -46,7 +46,7 @@ with DAG("notecoin-binance-strategy", description="notecoin",
 with DAG("notecoin-binance-strategy-sell", description="notecoin",
          default_args={"owner": "bingtao", "start_date": datetime(2023, 12, 1)},
          schedule_interval='0 0 1 12 *',
-         catchup=True) as dag:
+         ) as dag:
     t5 = PythonOperator(dag=dag,
                         task_id='sell-auto',
                         python_callable=sell_auto,
