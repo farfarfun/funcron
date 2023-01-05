@@ -21,7 +21,8 @@ def load_trade(ds, *args, **kwargs):
 with DAG("notecoin-binance-load-daily",
          description="notecoin",
          default_args={"owner": "bingtao", "start_date": datetime(2021, 9, 1)},
-         schedule_interval='0 8 * * *') as dag:
+         schedule_interval='0 0 * * *',
+         catchup=True) as dag:
     t1 = PythonOperator(dag=dag,
                         task_id='notecoin-binance-load-daily-kline',
                         # provide_context=False,
@@ -33,8 +34,9 @@ with DAG("notecoin-binance-load-daily",
 
 with DAG("notecoin-binance-load-weekly",
          description="notecoin",
-         default_args={"owner": "bingtao", "start_date": datetime(2021, 9, 1)},
-         schedule_interval='0 10 * * 2') as dag:
+         default_args={"owner": "bingtao", "start_date": datetime(2021, 9, 14)},
+         schedule_interval='0 2 * * 3',
+         catchup=True) as dag:
     t2 = PythonOperator(dag=dag,
                         task_id='notecoin-binance-load-weekly-kline',
                         # provide_context=False,

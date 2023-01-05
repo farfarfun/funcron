@@ -3,6 +3,7 @@ import os
 
 from notebuild.manage import BaseServer
 from notecron.server.port_manage import PortManage
+
 # sudo kill -9 `sudo lsof -t -i:5860`
 # gunicorn -c gun.py manage:app
 # nohup gunicorn -c gun.py manage:app  >>/notechats/logs/notecorn/server-$(date +%Y-%m-%d).log 2>&1 &
@@ -76,7 +77,7 @@ class CronFlower(BaseServer):
 def notecron():
     parser = argparse.ArgumentParser()
     parser.add_argument('cmd', default='unknown', help='init, stop, start, restart')
-    parser.add_argument('service', default='webserver, scheduler, worker, flower')
+    parser.add_argument('service', default='status, scheduler, worker, flower')
     values, unknown = parser.parse_known_args()
     if values.service == 'server':
         CronServer().parse_and_run()

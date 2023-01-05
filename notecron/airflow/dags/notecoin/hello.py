@@ -11,9 +11,9 @@ default_args = {
     "start_date": datetime(2022, 1, 1)
 }
 
-dag = DAG("Hello-World2",
+with DAG("Hello-World2",
           description="第一个DAG",
           default_args=default_args,
-          schedule_interval='0 8 * * *')
-
-t1 = BashOperator(task_id="hello", bash_command="echo 'Hello World, today is {{ ds }}'", dag=dag)
+          schedule_interval='0 0 * * *',
+          catchup=True) as dag:
+    t1 = BashOperator(task_id="hello", bash_command="echo 'Hello World, today is {{ ds }}'", dag=dag)
