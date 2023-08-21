@@ -8,8 +8,8 @@ import numpy as np
 import requests
 from apscheduler.jobstores.memory import MemoryJobStore
 from funcron.tool.mail import send_mail_163
-from notetool import SecretManage
-from notetool.tool.log import log
+from funtool import SecretManage
+from funtool.tool.log import log
 
 logger = log("ba-crawler")
 

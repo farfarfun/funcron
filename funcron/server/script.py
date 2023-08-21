@@ -1,7 +1,7 @@
 import argparse
 import os
 
-from notebuild.manage import BaseServer
+from funbuild.manage import BaseServer
 from funcron.server.port_manage import PortManage
 
 # sudo kill -9 `sudo lsof -t -i:5860`

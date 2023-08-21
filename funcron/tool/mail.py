@@ -2,8 +2,8 @@
 import smtplib
 from email.mime.text import MIMEText
 
-from notetool import SecretManage
-from notetool.tool.log import log
+from funtool import SecretManage
+from funtool.tool.log import log
 
 logger = log("ba-crawler")
 
@@ -20,9 +20,9 @@ def send_mail_163(subject="有货了", content="抢到了，快找牛哥，晚�
     message = MIMEText(content, "plain", "utf-8")
     # content 发送内容     "plain"文本格式   utf-8 编码格式
 
-    message['Subject'] = subject  # 邮件标题
-    message['To'] = receive[0]  # 收件人
-    message['From'] = sender  # 发件人
+    message["Subject"] = subject  # 邮件标题
+    message["To"] = receive[0]  # 收件人
+    message["From"] = sender  # 发件人
 
     smtp = smtplib.SMTP_SSL("smtp.163.com", 994)  # 实例化smtp服务器
     smtp.login(sender, password)  # 发件人登录

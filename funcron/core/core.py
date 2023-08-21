@@ -2,11 +2,11 @@ import argparse
 import subprocess
 from time import sleep
 
-from notebuild.shell import run_shell, run_shell_list
+from funbuild.shell import run_shell, run_shell_list
 from funcron.tasks import start
-from notetool.tool.log import log
+from funtool.tool.log import log
 
-logger = log("notebuild")
+logger = log("funbuild")
 
 
 class JobScheduler:
