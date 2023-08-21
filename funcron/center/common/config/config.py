@@ -23,12 +23,12 @@ logs_path = app.dir_log
 
 cron_db_url = db_path
 # cron_db_url = 'sqlite:///'+app.db_file('cron.sqlite')
-# cron_db_url = 'sqlite:////root/workspace/notechats/funcron/funcron/temp/cron.sqlite'
+# cron_db_url = 'sqlite:////root/workspace/fundata/funcron/funcron/temp/cron.sqlite'
 # cron_db_url = 'sqlite:///'+os.path.abspath(os.path.dirname(__file__))+'/cron.sqlite'
 
 cron_job_log_db_url = db_path
 # cron_job_log_db_url = 'sqlite:///'+app.db_file('db.sqlite')
-# cron_job_log_db_url = 'sqlite:////root/workspace/notechats/funcron/funcron/temp/db.sqlite'
+# cron_job_log_db_url = 'sqlite:////root/workspace/fundata/funcron/funcron/temp/db.sqlite'
 # cron_job_log_db_url = 'sqlite:///'+os.path.abspath(os.path.dirname(__file__))+'/db.sqlite'
 
 

@@ -16,7 +16,7 @@ class JobScheduler:
     def start(self):
         logger.info("start")
         subprocess.check_output(
-            "nohup funcron _start >>/notechats/logs/jobs/funcron-run-$(date +%Y-%m-%d).log 2>&1 &", shell=True
+            "nohup funcron _start >>/fundata/logs/jobs/funcron-run-$(date +%Y-%m-%d).log 2>&1 &", shell=True
         )
 
     def _start(self):

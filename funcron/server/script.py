@@ -6,7 +6,7 @@ from funcron.server.port_manage import PortManage
 
 # sudo kill -9 `sudo lsof -t -i:5860`
 # gunicorn -c gun.py manage:app
-# nohup gunicorn -c gun.py manage:app  >>/notechats/logs/notecorn/server-$(date +%Y-%m-%d).log 2>&1 &
+# nohup gunicorn -c gun.py manage:app  >>/fundata/logs/notecorn/server-$(date +%Y-%m-%d).log 2>&1 &
 
 
 class CronServer(BaseServer):
@@ -20,7 +20,7 @@ class CronServer(BaseServer):
             server_name=self.server_name,
             directory=self.current_path,
             command="gunicorn -c config.py funcron_server:app",
-            stdout_logfile="/notechats/logs/funcron/funcron.log",
+            stdout_logfile="/fundata/logs/funcron/funcron.log",
         )
         self.manage.start()
 
@@ -36,7 +36,7 @@ class CronScheduler(BaseServer):
             server_name=self.server_name,
             directory=self.current_path,
             command="airflow scheduler",
-            stdout_logfile="/notechats/logs/funcron/scheduler.log",
+            stdout_logfile="/fundata/logs/funcron/scheduler.log",
         )
         self.manage.start()
 
@@ -52,7 +52,7 @@ class CronWebServer(BaseServer):
             server_name=self.server_name,
             directory=self.current_path,
             command="airflow webserver -p 8061",
-            stdout_logfile="/notechats/logs/funcron/webserver.log",
+            stdout_logfile="/fundata/logs/funcron/webserver.log",
         )
         self.manage.start()
 
@@ -68,7 +68,7 @@ class CronWorker(BaseServer):
             server_name=self.server_name,
             directory=self.current_path,
             command="airflow celery worker",
-            stdout_logfile="/notechats/logs/funcron/worker.log",
+            stdout_logfile="/fundata/logs/funcron/worker.log",
         )
         self.manage.start()
 
@@ -84,7 +84,7 @@ class CronFlower(BaseServer):
             server_name=self.server_name,
             directory=self.current_path,
             command="airflow celery flower -p 8062",
-            stdout_logfile="/notechats/logs/funcron/flower.log",
+            stdout_logfile="/fundata/logs/funcron/flower.log",
         )
         self.manage.start()
 
