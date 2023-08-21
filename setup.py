@@ -2,7 +2,7 @@ import time
 from setuptools import find_packages, setup
 
 
-install_requires = ["apscheduler", "gunicorn", "records", "gevent"]
+install_requires = ["supervisor", "apscheduler", "gunicorn", "records", "gevent"]
 
 
 setup(
