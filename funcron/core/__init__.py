@@ -1,1 +1,1 @@
-from .core import notecron
+from .core import funcron

@@ -16,5 +16,5 @@ setup(
     package_data={"": ["*.js", "*.*"]},
     # include_package_data=True,
     install_requires=install_requires,
-    entry_points={"console_scripts": ["funcron = funcron.server.script:notecron"]},
+    entry_points={"console_scripts": ["funcron = funcron.server.script:funcron"]},
 )

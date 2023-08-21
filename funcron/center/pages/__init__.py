@@ -4,8 +4,8 @@
 # from flask import Flask
 # from flask_apscheduler import APScheduler
 # from flask_sqlalchemy import SQLAlchemy
-# from notecron.center.common.scheduler import CuBackgroundScheduler
-# from notecron.center.config import config_dict
+# from funcron.center.common.scheduler import CuBackgroundScheduler
+# from funcron.center.config import config_dict
 
 # db = SQLAlchemy()
 
@@ -55,11 +55,11 @@
 #     scheduler.init_app(app)
 #     scheduler.start()
 
-#     from notecron.center.pages.main import main as main_blueprint
+#     from funcron.center.pages.main import main as main_blueprint
 #     app.register_blueprint(main_blueprint)
 
 #     # 接口对接
-#     from notecron.center.pages.api import api as apis_bl
+#     from funcron.center.pages.api import api as apis_bl
 #     app.register_blueprint(apis_bl, url_prefix='/api')
 
 #     return app

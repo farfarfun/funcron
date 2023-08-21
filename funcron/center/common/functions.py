@@ -3,35 +3,27 @@ from functools import wraps
 import redis
 import requests
 from flask import current_app, jsonify
-from notecron.center.common.config import get_config, get_config_value
+from funcron.center.common.config import get_config, get_config_value
 
 
-def wechat_info_err(titile, content=''):
+def wechat_info_err(titile, content=""):
     """
     推送
         https://www.aniulee.com
     """
     try:
-        api_key = get_config_value('error_notice_api_key')
+        api_key = get_config_value("error_notice_api_key")
         if api_key:
-            post_url = 'https://api.aniulee.com/blog_api_go/api/v1/push'
-            data = {
-                'api_key': api_key,
-                'content': content,
-                'title': titile
-            }
-            resp = requests.post(post_url, data=data, timeout=2, headers={'user-agent': 'XNCron'})
+            post_url = "https://api.aniulee.com/blog_api_go/api/v1/push"
+            data = {"api_key": api_key, "content": content, "title": titile}
+            resp = requests.post(post_url, data=data, timeout=2, headers={"user-agent": "XNCron"})
             print(resp.json())
     except Exception as e:
         current_app.logger.error("推送有BUG【%s】" % str(e))
 
 
-def web_api_return(code, msg='ok', url=''):
-    return jsonify({
-        'errcode': code,
-        'errmsg': msg,
-        'url': url
-    })
+def web_api_return(code, msg="ok", url=""):
+    return jsonify({"errcode": code, "errmsg": msg, "url": url})
 
 
 def dict2string(dict_data, separator="&&"):
@@ -48,26 +40,32 @@ def single_task():
 
             config = get_config()
 
-            is_single = config.get('is_single')
+            is_single = config.get("is_single")
 
-            if is_single and is_single != '1':
-
-                if config.get('redis_pwd'):
-                    pool = redis.ConnectionPool(host=config.get('redis_host'), port=config.get('redis_port') or 6379,
-                                                db=config.get('redis_db') or 0, password=config.get('redis_pwd'))
+            if is_single and is_single != "1":
+                if config.get("redis_pwd"):
+                    pool = redis.ConnectionPool(
+                        host=config.get("redis_host"),
+                        port=config.get("redis_port") or 6379,
+                        db=config.get("redis_db") or 0,
+                        password=config.get("redis_pwd"),
+                    )
                 else:
-                    pool = redis.ConnectionPool(host=config.get('redis_host'), port=config.get('redis_port') or 6379,
-                                                db=config.get('redis_db') or 0)
+                    pool = redis.ConnectionPool(
+                        host=config.get("redis_host"),
+                        port=config.get("redis_port") or 6379,
+                        db=config.get("redis_db") or 0,
+                    )
 
                 r = redis.Redis(connection_pool=pool)
 
-                task_id = args[0] if args else ''
+                task_id = args[0] if args else ""
 
                 task_name = "task:%s:%s" % (task, task_id)
                 _result = r.get(task_name)
 
                 if not _result:
-                    r.set(task_name, 1, ex=2*60)
+                    r.set(task_name, 1, ex=2 * 60)
                     try:
                         result = func(*args, **kwargs)
                         return result
@@ -80,5 +78,7 @@ def single_task():
             else:
                 result = func(*args, **kwargs)
                 return result
+
         return inner
+
     return wrap
