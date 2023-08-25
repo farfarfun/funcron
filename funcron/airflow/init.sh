@@ -1,6 +1,6 @@
 cp airflow.cfg ~/airflow/airflow.cfg
 
-
+airflow db init
 
 
 #启动webserver
