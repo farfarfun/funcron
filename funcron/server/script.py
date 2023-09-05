@@ -4,6 +4,7 @@ import os
 from funbuild.manage import BaseServer
 from funcron.server.port_manage import PortManage
 
+
 # sudo kill -9 `sudo lsof -t -i:5860`
 # gunicorn -c gun.py manage:app
 # nohup gunicorn -c gun.py manage:app  >>/fundata/logs/notecorn/server-$(date +%Y-%m-%d).log 2>&1 &
@@ -89,10 +90,26 @@ class CronFlower(BaseServer):
         self.manage.start()
 
 
+class CoinDownload(BaseServer):
+    def __init__(self):
+        path = os.path.abspath(os.path.dirname(__file__))
+        super(CoinDownload, self).__init__("funcoin_download", path)
+
+    def init(self):
+        self.manage.init()
+        self.manage.add_job(
+            server_name=self.server_name,
+            directory=self.current_path,
+            command="funcoin download",
+            stdout_logfile="/fundata/logs/funcoin/download.log",
+        )
+        self.manage.start()
+
+
 def funcron():
     parser = argparse.ArgumentParser()
     parser.add_argument("cmd", default="unknown", help="init, stop, start, restart")
-    parser.add_argument("service", default="status, scheduler, worker, flower")
+    parser.add_argument("service", default="coin, status, scheduler, worker, flower")
     values, unknown = parser.parse_known_args()
     if values.service == "server":
         CronServer().parse_and_run()
@@ -104,6 +121,8 @@ def funcron():
         CronWorker().parse_and_run()
     elif values.service == "flower":
         CronFlower().parse_and_run()
+    elif values.service == "coin":
+        CoinDownload().parse_and_run()
     elif values.service == "status":
         PortManage().fprint()
     else:
