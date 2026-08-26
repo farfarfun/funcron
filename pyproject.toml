@@ -1,0 +1,29 @@
+[project]
+name = "funcron"
+version = "0.5.7"
+description = "基于 Flask 与 Airflow 的定时任务调度管理中心，提供 Web 管理后台及 server/scheduler/worker/flower 等后台服务"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "牛哥", email = "farfarfun@qq.com" }]
+dependencies = [
+    "supervisor",
+    "apscheduler",
+    "gunicorn",
+    "records",
+    "gevent",
+    "redi",
+    "apache-airflow",
+    "apache-airflow-providers-celery",
+]
+
+[project.scripts]
+funcron = "funcron.server.script:funcron"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["funcron"]
