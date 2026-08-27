@@ -1,6 +1,6 @@
 [project]
 name = "funcron"
-version = "0.5.7"
+version = "0.5.8"
 description = "基于 Flask 与 Airflow 的定时任务调度管理中心，提供 Web 管理后台及 server/scheduler/worker/flower 等后台服务"
 readme = "README.md"
 requires-python = ">=3.10"
