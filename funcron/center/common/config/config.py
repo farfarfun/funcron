@@ -1,7 +1,7 @@
 import os
 
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
-from notedata.work import WorkApp
+from fundata.work import WorkApp
 from funtool import read_secret
 
 host = read_secret(cate1="funcron", cate2="database", cate3="mysql", cate4="host") or "127.0.0.1"
