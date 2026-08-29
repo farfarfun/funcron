@@ -7,7 +7,7 @@ from funcron.server.port_manage import PortManage
 
 # sudo kill -9 `sudo lsof -t -i:5860`
 # gunicorn -c gun.py manage:app
-# nohup gunicorn -c gun.py manage:app  >>/fundata/logs/notecorn/server-$(date +%Y-%m-%d).log 2>&1 &
+# nohup gunicorn -c gun.py manage:app  >>/fundata/logs/funcron/server-$(date +%Y-%m-%d).log 2>&1 &
 
 
 class CronServer(BaseServer):

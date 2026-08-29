@@ -4,7 +4,7 @@ from apscheduler.executors.pool import ProcessPoolExecutor, ThreadPoolExecutor
 from apscheduler.jobstores.memory import MemoryJobStore
 from apscheduler.schedulers.blocking import BlockingScheduler
 
-# from notestock.dataset.run import run_month
+# from funstock.dataset.run import run_month
 from funtool.tool.log import logger
 
 
