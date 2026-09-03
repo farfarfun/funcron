@@ -2,12 +2,14 @@ import os
 
 from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
 from fundata.work import WorkApp
-from funtool import read_secret
+from funsecret import read_secret
 
-host = read_secret(cate1="funcron", cate2="database", cate3="mysql", cate4="host") or "127.0.0.1"
-database = read_secret(cate1="funcron", cate2="database", cate3="mysql", cate4="database") or "funcron"
-username = read_secret(cate1="funcron", cate2="database", cate3="mysql", cate4="user") or "funcron"
-password = read_secret(cate1="funcron", cate2="database", cate3="mysql", cate4="password") or "funcron"
+# 数据库连接串、Redis 密码、登录口令、API 密钥等敏感信息统一通过 funsecret 下发，
+# 不在代码中硬编码真实凭据；未配置时回落到仅供本地开发使用、明显不可用于生产的占位值。
+host = read_secret(cate1="funcron", cate2="database", cate3="mysql", cate4="host", value="127.0.0.1")
+database = read_secret(cate1="funcron", cate2="database", cate3="mysql", cate4="database", value="funcron")
+username = read_secret(cate1="funcron", cate2="database", cate3="mysql", cate4="user", value="funcron")
+password = read_secret(cate1="funcron", cate2="database", cate3="mysql", cate4="password", value="funcron")
 
 db_path = f"mysql+pymysql://{username}:{password}@{host}/{database}"
 
@@ -16,59 +18,46 @@ app = WorkApp("funcron")
 app.create()
 basedir = app.dir_common  # os.path.abspath(os.path.dirname(__file__))
 
-# redis_host = '192.168.3.122'
-
-login_password = "123456"
+login_password = read_secret(cate1="funcron", cate2="web", cate3="login", cate4="password", value="123456")
 logs_path = app.dir_log
 
 cron_db_url = db_path
-# cron_db_url = 'sqlite:///'+app.db_file('cron.sqlite')
-# cron_db_url = 'sqlite:////root/workspace/fundata/funcron/funcron/temp/cron.sqlite'
-# cron_db_url = 'sqlite:///'+os.path.abspath(os.path.dirname(__file__))+'/cron.sqlite'
-
 cron_job_log_db_url = db_path
-# cron_job_log_db_url = 'sqlite:///'+app.db_file('db.sqlite')
-# cron_job_log_db_url = 'sqlite:////root/workspace/fundata/funcron/funcron/temp/db.sqlite'
-# cron_job_log_db_url = 'sqlite:///'+os.path.abspath(os.path.dirname(__file__))+'/db.sqlite'
 
 
-def get_config():
-    data = {
+def get_config() -> dict:
+    """返回运行时配置字典（Redis 连接信息、数据库地址、登录口令、告警/接口密钥等）。
+
+    敏感字段均经 funsecret 下发，未配置密钥库时回落到仅供本地开发使用的占位值。
+    """
+    return {
         "is_single": 0,
-        "redis_host": "192.168.3.122",
-        "redis_pwd": "123456",
+        "redis_host": read_secret(cate1="funcron", cate2="redis", cate3="host", value="127.0.0.1"),
+        "redis_pwd": read_secret(cate1="funcron", cate2="redis", cate3="password", value="123456"),
         "redis_db": 1,
         "cron_db_url": cron_db_url,
         "cron_job_log_db_url": cron_job_log_db_url,
         "redis_port": 6379,
         "login_pwd": login_password,
-        "error_notice_api_key": 123456,
+        "error_notice_api_key": read_secret(
+            cate1="funcron", cate2="notice", cate3="error_api_key", value="123456"
+        ),
         "job_log_counts": 1000,
-        "api_access_token": "abcdedf",
+        "api_access_token": read_secret(
+            cate1="funcron", cate2="api", cate3="access_token", value="abcdedf"
+        ),
         "error_keyword": "fail",
     }
-    return data
 
 
-def get_config_value(key):
-    data = {
-        "is_single": 0,
-        "redis_host": "192.168.3.122",
-        "redis_pwd": "123456",
-        "redis_db": 1,
-        "cron_db_url": cron_db_url,
-        "cron_job_log_db_url": cron_job_log_db_url,
-        "redis_port": 6379,
-        "login_pwd": login_password,
-        "error_notice_api_key": 123456,
-        "job_log_counts": 1000,
-        "api_access_token": "abcdedf",
-        "error_keyword": "fail",
-    }
-    return data[key]
+def get_config_value(key: str):
+    """按 `key` 从 `get_config()` 返回的配置字典中取出对应的值。"""
+    return get_config()[key]
 
 
 class Config:
+    """Flask 应用基础配置，`DevelopmentConfig`/`ProductionConfig` 在此基础上覆盖差异项。"""
+
     JSON_AS_ASCII = False
     JSONIFY_PRETTYPRINT_REGULAR = False
     SECRET_KEY = os.environ.get("SECRET_KEY") or "hard to guess string"
@@ -122,7 +111,8 @@ class Config:
     ]
 
     @staticmethod
-    def init_app(app):
+    def init_app(app) -> None:
+        """确保日志目录存在；供 `create_app()` 在应用启动时调用。"""
         if not os.path.exists(logs_path):
             os.mkdir(logs_path)
 
