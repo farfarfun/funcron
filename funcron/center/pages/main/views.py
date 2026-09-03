@@ -1,6 +1,8 @@
 import traceback
 
+from farlog import getLogger
 from flask import current_app, redirect, render_template, request, session
+
 from funcron.center.common import database
 from funcron.center.common.functions import web_api_return, wechat_info_err
 from funcron.center.models import CronInfos, JobLog, JobLogItems
@@ -11,6 +13,7 @@ from funcron.center.utils.times import get_now_time
 
 db = database.db
 scheduler = database.scheduler
+logger = getLogger("funcron")
 
 
 @blue_print.route("/api_doc", methods=["GET", "POST"])
@@ -66,7 +69,7 @@ def job_log_all_list():
     filter_arr = []
     task_name = keywords.get("task_name")
     if task_name:
-        filter_arr.append(CronInfos.task_name.like("{}%".format(task_name)))
+        filter_arr.append(CronInfos.task_name.like(f"{task_name}%"))
     beg_time = keywords.get("beg_time")
     end_time = keywords.get("end_time")
     if beg_time and end_time:
@@ -152,7 +155,7 @@ def cron_add():
 
             if day_of_week:
                 if day_of_week.isdigit():
-                    if int(day_of_week) not in range(0, 7):
+                    if int(day_of_week) not in range(7):
                         return web_api_return(code=1, msg="星期 不在范围内，请检查!")
                 else:
                     if day_of_week not in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]:
@@ -161,18 +164,18 @@ def cron_add():
             hour = datas.get("hour")
 
             if hour and hour.isdigit():
-                if int(hour) not in range(0, 24):
+                if int(hour) not in range(24):
                     return web_api_return(code=1, msg="小时 不在范围内，请检查!")
 
             minute = datas.get("minute")
             if minute and minute.isdigit():
-                if int(minute) not in range(0, 60):
+                if int(minute) not in range(60):
                     return web_api_return(code=1, msg="分钟 不在范围内，请检查!")
 
             second = datas.get("second")
 
             if second and second.isdigit():
-                if int(second) not in range(0, 60):
+                if int(second) not in range(60):
                     return web_api_return(code=1, msg="秒 不在范围内，请检查!")
 
             ds_ms = datas.get("ds_ms")
@@ -278,7 +281,7 @@ def cron_edit():
 
         if day_of_week:
             if day_of_week.isdigit():
-                if int(day_of_week) not in range(0, 7):
+                if int(day_of_week) not in range(7):
                     return web_api_return(code=1, msg="星期 不在范围内，请检查!")
             else:
                 if day_of_week not in ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]:
@@ -287,18 +290,18 @@ def cron_edit():
         hour = datas.get("hour")
 
         if hour and hour.isdigit():
-            if int(hour) not in range(0, 24):
+            if int(hour) not in range(24):
                 return web_api_return(code=1, msg="小时 不在范围内，请检查!")
 
         minute = datas.get("minute")
         if minute and minute.isdigit():
-            if int(minute) not in range(0, 60):
+            if int(minute) not in range(60):
                 return web_api_return(code=1, msg="分钟 不在范围内，请检查!")
 
         second = datas.get("second")
 
         if second and second.isdigit():
-            if int(second) not in range(0, 60):
+            if int(second) not in range(60):
                 return web_api_return(code=1, msg="秒 不在范围内，请检查!")
 
         ds_ms = datas.get("ds_ms")
@@ -391,8 +394,10 @@ def cron_del():
 
     try:
         scheduler.remove_job("cron_%s" % cron_id)
-    except:
-        pass
+    except Exception as e:
+        # 任务可能本来就没有注册到调度器（比如从未启动过），这里只需要记录，
+        # 不影响后续删除数据库记录。
+        logger.warning(f"remove_job(cron_{cron_id}) failed: {e}")
 
     db.session.execute("delete from job_log where cron_info_id='%s'" % cron_id)
 
@@ -408,11 +413,12 @@ def cron_batch_del():
     JobLog.query.filter(JobLog.cron_info_id.in_(ids)).delete(synchronize_session=False)
     db.session.commit()
 
-    try:
-        for cron_id in ids:
+    for cron_id in ids:
+        try:
             scheduler.remove_job("cron_%s" % cron_id)
-    except:
-        pass
+        except Exception as e:
+            # 单个任务从调度器移除失败不应中断整批删除，记录后继续处理下一个。
+            logger.warning(f"remove_job(cron_{cron_id}) failed: {e}")
 
     return web_api_return(code=0, msg="操作成功", url="/cron_list")
 
@@ -434,7 +440,8 @@ def check_pass():
                 return redirect("/check_pass?msg=密码有误")
             session["is_login"] = True
             return redirect("/cron_list")
-        except:
+        except Exception as e:
+            logger.error(f"check_pass failed: {e}")
             return redirect("/check_pass?msg=系统有误,请重新试试")
     return render_template("check_pass.html", msg=msg, today=today)
 

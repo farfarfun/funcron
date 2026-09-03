@@ -3,13 +3,14 @@ from datetime import datetime
 from apscheduler.executors.pool import ProcessPoolExecutor, ThreadPoolExecutor
 from apscheduler.jobstores.memory import MemoryJobStore
 from apscheduler.schedulers.blocking import BlockingScheduler
+from farlog import getLogger
 
 # from funstock.dataset.run import run_month
-from funtool.tool.log import logger
+logger = getLogger("funcron")
 
 
 def my_job(id="my_job"):
-    logger.info(id, "-->", datetime.now())
+    logger.info(f"{id} --> {datetime.now()}")
 
 
 job_stores = {
@@ -24,9 +25,9 @@ job_defaults = {"coalesce": False, "max_instances": 3}
 
 def my_listener(event):
     if event.exception:
-        print("任务出错了！！！！！！")
+        logger.error(f"任务出错了：{event.exception}")
     else:
-        print("任务照常运行...")
+        logger.info("任务照常运行...")
 
 
 def start():
@@ -40,7 +41,6 @@ def start():
 
     try:
         scheduler.start()
-        print(scheduler.state)
-        # a = 1
+        logger.info(f"scheduler state: {scheduler.state}")
     except (KeyboardInterrupt, SystemExit):
         pass

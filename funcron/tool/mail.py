@@ -2,10 +2,10 @@
 import smtplib
 from email.mime.text import MIMEText
 
-from funtool import SecretManage
-from funtool.tool.log import log
+from farlog import getLogger
+from funsecret import read_secret
 
-logger = log("ba-crawler")
+logger = getLogger("ba-crawler")
 
 
 def send_mail_163(subject="有货了", content="抢到了，快找牛哥，晚了就没了", receive="1007530194@qq.com"):
@@ -15,8 +15,8 @@ def send_mail_163(subject="有货了", content="抢到了，快找牛哥，晚�
         receive = [receive]
 
     sender = "15068733021@163.com"  # 发送方
-    secret = SecretManage()
-    password = secret.read("mail", "163", "password")
+    # 邮箱密码经 funsecret 下发，不硬编码真实凭据；未配置时回落到空字符串（登录会失败，需先配置密钥库）。
+    password = read_secret(cate1="funcron", cate2="mail", cate3="163", cate4="password", value="")
     message = MIMEText(content, "plain", "utf-8")
     # content 发送内容     "plain"文本格式   utf-8 编码格式
 
@@ -29,4 +29,4 @@ def send_mail_163(subject="有货了", content="抢到了，快找牛哥，晚�
     # as_string 对 message 的消息进行了封装
     smtp.sendmail(sender, receive, message.as_string())
     smtp.close()
-    logger.info("sen to {} success".format(receive))
+    logger.info(f"sen to {receive} success")

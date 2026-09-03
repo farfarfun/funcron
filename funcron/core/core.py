@@ -2,11 +2,11 @@ import argparse
 import subprocess
 from time import sleep
 
-from funbuild.shell import run_shell, run_shell_list
-from funcron.tasks import start
-from funtool.tool.log import log
+from farlog import getLogger
 
-logger = log("funbuild")
+from funcron.tasks import start
+
+logger = getLogger("funcron")
 
 
 class JobScheduler:
@@ -32,8 +32,8 @@ class JobScheduler:
             a = [i for i in line.split(" ") if len(i) > 0]
 
             if "funcron" in a[-2] and a[-1] in ("restart", "start", "_start"):
-                subprocess.check_output("kill -9 {}".format(a[0]), shell=True)
-                logger.info("kill zhe process \n{}\n".format(line))
+                subprocess.check_output(f"kill -9 {a[0]}", shell=True)
+                logger.info(f"kill zhe process \n{line}\n")
 
     def restart(self):
         self.stop()

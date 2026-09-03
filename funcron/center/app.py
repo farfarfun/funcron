@@ -1,36 +1,13 @@
-import logging
-from logging.handlers import TimedRotatingFileHandler
-
+from farlog import getLogger
 from flask import Flask
-from flask_apscheduler import APScheduler
 from flask_sqlalchemy import SQLAlchemy
+
 from funcron.center.common import database
 from funcron.center.common.config import config_dict
-from funcron.center.common.scheduler import CuBackgroundScheduler
 
 db: SQLAlchemy = database.db
 scheduler = database.scheduler
-
-formatter = logging.Formatter("[%(asctime)s][%(filename)s:%(lineno)d][%(levelname)s][%(thread)d] - %(message)s")
-
-
-def add_handler(app, config):
-    info_handler = TimedRotatingFileHandler(
-        f"{config.LOGDIR}/info.log", when="H", interval=1, backupCount=7, encoding="UTF-8", delay=False, utc=True
-    )
-    # info_handler.setLevel(logging.INFO)
-    info_handler.filter = lambda record: record.levelno == logging.INFO
-    info_handler.setFormatter(formatter)
-
-    app.logger.addHandler(info_handler)
-
-    error_handler = TimedRotatingFileHandler(
-        f"{config.LOGDIR}/error.log", when="D", interval=1, backupCount=15, encoding="UTF-8", delay=False, utc=True
-    )
-    error_handler.setLevel(logging.ERROR)
-    error_handler.setFormatter(formatter)
-
-    app.logger.addHandler(error_handler)
+logger = getLogger("funcron")
 
 
 def create_app(config_name="production"):
@@ -40,10 +17,6 @@ def create_app(config_name="production"):
     app = Flask(__name__)
     app.config.from_object(config)
     config.init_app(app)
-
-    logging.basicConfig(level=logging.ERROR)
-
-    add_handler(app, config)
 
     scheduler.app = app
     db.init_app(app)

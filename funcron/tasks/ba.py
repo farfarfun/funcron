@@ -1,17 +1,12 @@
 # coding:utf -8
-import smtplib
-from email.mime.text import MIMEText
-from time import sleep
 
-import demjson
-import numpy as np
+import demjson3 as demjson
 import requests
-from apscheduler.jobstores.memory import MemoryJobStore
-from funcron.tool.mail import send_mail_163
-from funtool import SecretManage
-from funtool.tool.log import log
+from farlog import getLogger
 
-logger = log("ba-crawler")
+from funcron.tool.mail import send_mail_163
+
+logger = getLogger("ba-crawler")
 
 
 class BodyGuardPharm:
@@ -62,10 +57,10 @@ class BodyGuardPharm:
 def watch_product(product_id=44434):
     ba = BodyGuardPharm()
     res = ba.add_cart(product_id=44434)
-    logger.info("product={},response={}".format(product_id, res))
+    logger.info(f"product={product_id},response={res}")
 
     if res["status"] == 200:
-        content = "抢到了，快找牛哥，晚了就没了,product={},response={}".format(product_id, res)
+        content = f"抢到了，快找牛哥，晚了就没了,product={product_id},response={res}"
         send_mail_163(receive=["1007530194@qq.com", "594210169@qq.com"], content=content)
         return True
 
