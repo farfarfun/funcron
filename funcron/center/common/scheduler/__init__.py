@@ -1,5 +1,5 @@
 """
 scheduler
 """
-from .CuBackgroundScheduler import CuBackgroundScheduler
-from .CuGeventScheduler import CuGeventScheduler
+from .cu_background_scheduler import CuBackgroundScheduler
+from .cu_gevent_scheduler import CuGeventScheduler

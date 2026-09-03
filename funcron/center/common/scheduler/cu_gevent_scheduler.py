@@ -5,11 +5,16 @@ from threading import TIMEOUT_MAX
 
 import records
 import six
-from apscheduler.events import EVENT_JOB_MAX_INSTANCES, EVENT_JOB_SUBMITTED, JobSubmissionEvent
+from apscheduler.events import (
+    EVENT_JOB_MAX_INSTANCES,
+    EVENT_JOB_SUBMITTED,
+    JobSubmissionEvent,
+)
 from apscheduler.executors.base import MaxInstancesReachedError
 from apscheduler.schedulers.base import STATE_PAUSED
 from apscheduler.schedulers.gevent import GeventScheduler
 from apscheduler.util import timedelta_seconds
+
 from funcron.center.common.config import get_config_value
 
 
@@ -25,7 +30,7 @@ class CuGeventScheduler(GeventScheduler):
             cron_id = cron_id.split("_")[-1]
             self._dbs().query("update cron_infos set status=-1 where id='%s'" % cron_id)
         except Exception as e:
-            pass
+            self._logger.error('update_cron_info failed for cron_id="%s": %s', cron_id, e)
 
     def _process_jobs(self):
         """
@@ -41,6 +46,7 @@ class CuGeventScheduler(GeventScheduler):
         try:
             fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except Exception as exc:
+            self._logger.debug("scheduler.lock already held by another process, skip this round: %s", exc)
             f.close()
         else:
             if self.state == STATE_PAUSED:
@@ -70,7 +76,7 @@ class CuGeventScheduler(GeventScheduler):
                         # Look up the job's executor
                         try:
                             executor = self._lookup_executor(job.executor)
-                        except BaseException as e:
+                        except BaseException:
                             self._logger.error(
                                 'Executor lookup ("%s") failed for job "%s" -- removing it from the ' "job store",
                                 job.executor,
@@ -110,8 +116,10 @@ class CuGeventScheduler(GeventScheduler):
                                 try:
                                     self.update_cron_info(job.id)
                                     self.remove_job(job.id, jobstore_alias)
-                                except:
-                                    self._logger.error('Error remove job "%s" to executor "%s"', job, job.executor)
+                                except Exception as exc:
+                                    self._logger.error(
+                                        'Error remove job "%s" to executor "%s": %s', job, job.executor, exc
+                                    )
 
                     # Set a new next wakeup time if there isn't one yet or
                     # the jobstore has an even earlier one
