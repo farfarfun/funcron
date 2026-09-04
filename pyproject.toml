@@ -26,7 +26,6 @@ dependencies = [
     "funbuild>=1.6.75",
     "fundata>=1.0.1",
     "funcoin>=1.0.51",
-    "flask-script>=2.0.6",
     "demjson3>=3.0.6",
 ]
 
