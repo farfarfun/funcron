@@ -47,6 +47,14 @@ scripts/setup.sh status all
 `prod` 环境要求 funcron/funcoin 已通过 `pip install`/`uv sync` 安装为正式包，未安装会直接报错退出，
 不会回退到仓库源码运行。
 
+## 凭据配置
+
+数据库密码、Web 登录密码、Redis 密码、通知 API key、API access token、Flask session key
+均从 `funsecret` 读取，不提供默认凭据。对应路径位于 `funcron/database/mysql/password`、
+`funcron/web/login/password`、`funcron/redis/password`、`funcron/notice/error_api_key`、
+`funcron/api/access_token` 和 `funcron/web/flask/secret_key`。缺少登录密码时 Web 登录会拒绝访问；
+缺少 API access token 时 API 会返回配置错误；可选的 Redis 密码和通知 API key 为空时不启用相应认证或通知。
+
 ---
 
 ## 关于 farfarfun

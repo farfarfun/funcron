@@ -67,8 +67,12 @@ def cron_do(cron_id):
 
                             try:
                                 ret = req.json()
-                            except:
-                                pass
+                            except requests.exceptions.JSONDecodeError:
+                                current_app.logger.debug(
+                                    "cron response is not JSON; using text body (cron_id=%s, url=%s)",
+                                    cron_id,
+                                    req_url,
+                                )
 
                             if type(ret) == dict:
                                 ret = json.dumps(ret, ensure_ascii=False)

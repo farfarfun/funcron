@@ -35,12 +35,13 @@ def crons():
     task_keyword = datas.get("task_keyword") or ""
     access_token = datas.get("access_token")
 
-    if api_access_token:
-        if not access_token:
-            return api_err_return(msg="access_token不能为空")
+    if not api_access_token:
+        return api_err_return(msg="服务端未配置access_token")
+    if not access_token:
+        return api_err_return(msg="access_token不能为空")
 
-        if api_access_token != access_token:
-            return api_err_return(msg="access_token错误")
+    if api_access_token != access_token:
+        return api_err_return(msg="access_token错误")
 
     if not task_name:
         return api_err_return(msg="任务名称不能为空")
@@ -175,12 +176,13 @@ def cron_status():
         except Exception as e:
             return api_err_return(msg="status只能0或者1")
 
-    if api_access_token:
-        if not access_token:
-            return api_err_return(msg="access_token不能为空")
+    if not api_access_token:
+        return api_err_return(msg="服务端未配置access_token")
+    if not access_token:
+        return api_err_return(msg="access_token不能为空")
 
-        if api_access_token != access_token:
-            return api_err_return(msg="access_token错误")
+    if api_access_token != access_token:
+        return api_err_return(msg="access_token错误")
 
     if not task_name:
         return api_err_return(msg="任务名称不能为空")
@@ -232,12 +234,13 @@ def cron_add_log():
 
     xiaoniu_cron_log_id = datas.get("xiaoniu_cron_log_id")
 
-    if api_access_token:
-        if not access_token:
-            return api_err_return(msg="access_token不能为空")
+    if not api_access_token:
+        return api_err_return(msg="服务端未配置access_token")
+    if not access_token:
+        return api_err_return(msg="access_token不能为空")
 
-        if api_access_token != access_token:
-            return api_err_return(msg="access_token错误")
+    if api_access_token != access_token:
+        return api_err_return(msg="access_token错误")
 
     if not xiaoniu_cron_log_id:
         return api_err_return(msg="xiaoniu_cron_log_id 必传哦！")
