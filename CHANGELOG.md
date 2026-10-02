@@ -55,6 +55,10 @@
   连测试收集都会整体失败。现在工作目录按
   `FUNCRON_APP_DIR` → `FUNDATA_APP_DIR` → `/opt/farfarfun/apps/funcron`（可写才用）
   → `~/.funcron` 的顺序解析，并有 4 个测试覆盖这条优先级链。
+- **404 / 500 错误页以 HTTP 200 返回**：`funcron/center/pages/main/errors.py` 的
+  `app_errorhandler` 只返回一个字符串，Flask 不会自动套上异常的状态码，于是「找不到页面」
+  和「服务端异常」在 HTTP 层都表现为成功，探活与调用方无法区分。现在显式返回
+  `(正文, 404)` / `(正文, 500)`，并有测试断言状态码。
 - **`funcron.tool.mail` 里写死的真实邮箱地址与收件人**：发件账号 `15068733021@163.com`
   与默认收件人（两个个人 QQ 邮箱）直接写在源码里，随包发布到 PyPI。现在发件账号、
   口令、默认收件人全部经 `funsecret` 下发，缺配置时抛 `ValueError` 而不是静默发往写死的
@@ -89,10 +93,15 @@
 
 - `funcron` CLI 新增 `services` 子命令，列出 `scripts/setup.sh` 能托管的服务名；
   并有测试断言这份名单与 `scripts/setup.sh` 的 `ALL_SERVICES` 一致。
-- 测试从 3 个文件扩充到 8 个，新增：CLI 子命令与参数解析、`scripts/setup.sh` 的动作/服务/环境
-  参数校验与 `status` 行为、重复启动检查五种状态的逐一验证、prod 生产包校验对源码树/
-  editable 的拒绝（含「朴素 import 确实会通过」的前置断言，避免测试空跑）、
-  `api_deal_return`/`login_required` 的正常与边界路径、配置默认值的安全性。
+- 测试从 3 个文件 / 1 条断言扩充到 10 个文件 / 74 条，新增：CLI 子命令与参数解析、
+  `scripts/setup.sh` 的动作/服务/环境参数校验与 `status` 行为、重复启动检查五种状态的
+  逐一验证、prod 生产包校验对源码树/editable 的拒绝（含「朴素 import 确实会通过」的
+  前置断言，避免测试空跑）、`api_deal_return`/`login_required` 的正常与边界路径、
+  配置默认值的安全性与工作目录解析优先级、邮件发送的缺配置/多收件人路径、
+  404/500 错误页的状态码。原先两个用 `pytest.importorskip` 兜住 fundata 问题的测试
+  已改为真实 import，环境退化时直接失败而不是静默跳过。
+- Web/API 视图函数、蓝图模块与错误处理器补齐中文 docstring；`api/views.py` 里
+  `except Exception` 收窄为 `(TypeError, ValueError)`。
 
 ### 废弃
 

@@ -168,9 +168,10 @@ def cron_status():
 
     if status:
         try:
-            if int(status) not in [0, 1]:
+            if int(status) not in (0, 1):
                 return api_err_return(msg="status只能0或者1")
-        except Exception:
+        except (TypeError, ValueError):
+            # 只捕获 int() 真正会抛的类型/数值错误，不用 except Exception 把无关异常也吞掉。
             return api_err_return(msg="status只能0或者1")
 
     if not api_access_token:

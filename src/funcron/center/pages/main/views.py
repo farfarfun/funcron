@@ -20,6 +20,7 @@ logger = getLogger("funcron")
 @blue_print.route("/api_doc", methods=["GET", "POST"])
 @login_required
 def api_doc():
+    """渲染 API 文档页。"""
     return render_template("api_doc.html")
 
 
@@ -27,6 +28,7 @@ def api_doc():
 @blue_print.route("/", methods=["GET", "POST"])
 @login_required
 def cron_list():
+    """渲染定时任务列表页，支持按 `task_name` 关键字过滤与分页。"""
     keyword = request.args.to_dict()
     page = int(request.args.get("page") or 1)
     task_name = keyword.get("task_name")
@@ -39,6 +41,7 @@ def cron_list():
 @blue_print.route("/job_log_list", methods=["GET", "POST"])
 @login_required
 def job_log_list():
+    """渲染某个任务的执行日志列表页（按任务 id 过滤、分页）。"""
     keywords = request.args.to_dict()
 
     page = int(request.args.get("page") or 1)
@@ -54,6 +57,7 @@ def job_log_list():
 @blue_print.route("/job_log_item_list", methods=["GET", "POST"])
 @login_required
 def job_log_item_list():
+    """渲染单条执行日志的明细列表页。"""
     log_id = request.args.get("log_id")
     page_data = JobLogItems.query.filter(JobLogItems.log_id == log_id).all()
 
@@ -63,6 +67,7 @@ def job_log_item_list():
 @blue_print.route("/job_log_all_list", methods=["GET", "POST"])
 @login_required
 def job_log_all_list():
+    """渲染全部任务的执行日志列表页，支持关键字与状态过滤、分页。"""
     keywords = request.args.to_dict()
 
     page = int(request.args.get("page") or 1)
@@ -93,6 +98,7 @@ def job_log_all_list():
 @blue_print.route("/job_log_delete", methods=["GET", "POST"])
 @login_required
 def job_log_delete():
+    """删除指定的单条执行日志，返回 JSON 结果。"""
     datas = request.values.to_dict()
     job_log_id = datas.get("job_log_id")
     job_logs = JobLog.query.get(job_log_id)
@@ -107,6 +113,7 @@ def job_log_delete():
 @blue_print.route("/job_batch_delete", methods=["GET", "POST"])
 @login_required
 def job_batch_delete():
+    """按 id 列表批量删除执行日志，返回 JSON 结果。"""
     ids = request.form.getlist("id")
     JobLog.query.filter(JobLog.id.in_(ids)).delete(synchronize_session=False)
     db.session.commit()
@@ -116,6 +123,7 @@ def job_batch_delete():
 @blue_print.route("/job_log_clear", methods=["GET", "POST"])
 @login_required
 def job_log_clear():
+    """清空指定任务的全部执行日志，返回 JSON 结果。"""
     job_logs = JobLog.query.get(JobLog.id.__ge__(0))
     if not job_logs:
         return web_api_return(code=1, msg="信息不存在")
@@ -127,6 +135,7 @@ def job_log_clear():
 @blue_print.route("/cron_add", methods=["GET", "POST"])
 @login_required
 def cron_add():
+    """GET 渲染新增任务表单，POST 校验并写入新任务。"""
     if request.method == "POST":
         try:
             datas = request.values.to_dict()
@@ -241,6 +250,7 @@ def cron_add():
 @blue_print.route("/cron_edit", methods=["GET", "POST"])
 @login_required
 def cron_edit():
+    """GET 渲染任务编辑表单，POST 校验并更新任务配置。"""
     id = request.values.get("id")
     cif = CronInfos.query.get(id)
     if request.method == "POST":
@@ -357,6 +367,7 @@ def cron_edit():
 @blue_print.route("/update_status", methods=["GET", "POST"])
 @login_required
 def update_status():
+    """启用/停用指定任务（同步更新调度器中的 job），返回 JSON 结果。"""
     id = request.args.get("id")
     cif = CronInfos.query.get(id)
     if not cif:
@@ -377,6 +388,7 @@ def update_status():
 @blue_print.route("/cron_del", methods=["GET", "POST"])
 @login_required
 def cron_del():
+    """删除指定任务及其执行日志，并从调度器中移除对应 job。"""
     id = request.args.get("id")
     cif = CronInfos.query.get(id)
     if not cif:
@@ -405,6 +417,7 @@ def cron_del():
 @blue_print.route("/cron_batch_del", methods=["GET", "POST"])
 @login_required
 def cron_batch_del():
+    """按 id 列表批量删除任务，返回 JSON 结果。"""
     ids = request.form.getlist("id")
     CronInfos.query.filter(CronInfos.id.in_(ids)).delete(synchronize_session=False)
     JobLog.query.filter(JobLog.cron_info_id.in_(ids)).delete(synchronize_session=False)
@@ -422,6 +435,7 @@ def cron_batch_del():
 
 @blue_print.route("/check_pass", methods=["GET", "POST"])
 def check_pass():
+    """登录口令校验页：GET 渲染表单，POST 校验口令并写入会话。"""
     today = get_now_time()
     msg = request.values.get("msg", "")
 
@@ -445,5 +459,6 @@ def check_pass():
 
 @blue_print.route("/logout")
 def logout():
+    """清除会话中的登录标记并跳回口令校验页。"""
     session.clear()
     return redirect("/check_pass")
