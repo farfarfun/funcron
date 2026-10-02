@@ -71,9 +71,16 @@
 - 新增 `[tool.ruff]` 配置（line-length 120、显式 select 规则集）与 `[tool.pytest.ini_options]`，
   `ruff` 加入 dev 依赖组；补上 `[project.urls]`。`ruff check` 与 `ruff format --check`
   现已全仓库通过（存量问题逐条修掉或带理由标注豁免，不是靠放宽规则集蒙过去）。
-- `uv.lock` 中的 `urllib3` 从 2.7.0 升到 2.8.0，修掉 2 个 HIGH + 1 MEDIUM 安全告警
-  （`HTTPResponse.stream()/read_chunked()` 无界缓冲、HTTPS 代理的 TLS 配置可能被忽略、
-  chunked deflate 响应可能导致无限循环）。纯传递依赖升级，本包代码未变，测试全绿。
+- `uv.lock` 中的传递依赖升级，修掉 Dependabot 报出的安全告警（纯锁文件升级，本包代码未变，
+  测试全绿）：
+  - `urllib3` 2.7.0 → 2.8.0：2 HIGH + 1 MEDIUM（`HTTPResponse.stream()/read_chunked()`
+    无界缓冲、HTTPS 代理的 TLS 配置可能被忽略、chunked deflate 响应可能无限循环）。
+  - `pyjwt` 2.13.0 → 2.15.1：1 CRITICAL + 5 HIGH + 多个 MEDIUM（非对称 PEM 检测绕过、
+    公钥被当作 HMAC 密钥、BOM 绕过、空 HMAC 密钥、`PyJWKClient` 跟随重定向等）。
+  - `tornado` 6.5.8 → 6.5.10：2 HIGH（`CurlAsyncHTTPClient` 解压无响应大小上限、
+    `StaticFileHandler` 跟随软链接越出静态根目录）。
+  - 仍未修复的 `diskcache`（unsafe pickle 反序列化）上游无可用修复版本，funcron 只把它
+    当本地缓存用、不反序列化外部输入，暂维持现状。
 - 把 `script/__version__.md` 与 `pyproject.toml` 的 `[project].version` 对齐（此前漂成
   0.5.8 / 0.5.7：funbuild 的 `sync_all_manifest_versions()` 不同步 `script/__version__.md`）。
   新增 `tests/test_version_consistency.py` 断言两处一致，拦截后续漂移。
