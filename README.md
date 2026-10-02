@@ -13,22 +13,25 @@ pip install funcron
 
 ## 最小可运行示例
 
-安装完成后，通过内置的 `funcron` 命令行查看可用服务、启动 Web 管理后台，或查看本机常用端口的可访问状态：
+安装完成后，`funcron` 命令行提供两个查询类子命令：
 
 ```bash
-# 前台启动 Web 管理后台（调试用）
-funcron server
-
-# 查看本机常用服务端口状态
+# 查看本机常用服务端口的可访问状态
 funcron status
+
+# 列出 scripts/setup.sh 支持托管的服务名
+funcron services
 ```
+
+长期运行服务的启停不走 CLI，统一由 `scripts/setup.sh` 管理，见下一节。
 
 ## 服务启动（scripts/setup.sh）
 
 生产环境或本地长期运行各服务，统一通过 `scripts/setup.sh` 管理，按 `动作 → 服务 → 环境` 解析参数：
 
 ```bash
-# 用法: scripts/setup.sh {start|stop|restart|status|run} <service> <dev|prod>
+# 用法: scripts/setup.sh {start|stop|restart|run} <service> <dev|prod>
+#       scripts/setup.sh status <service> [dev|prod]
 #   <service>: server | airflow-webserver | airflow-scheduler | airflow-worker
 #              | airflow-flower | coin | all
 
@@ -38,14 +41,25 @@ scripts/setup.sh start server prod
 # 前台运行开发环境的 Airflow scheduler，方便调试
 scripts/setup.sh run airflow-scheduler dev
 
-# 查看所有服务状态
+# 查看所有服务在 dev 与 prod 两个环境下的状态（status 的环境参数可省略）
 scripts/setup.sh status all
+
+# 只看生产环境
+scripts/setup.sh status all prod
 ```
 
-`start`/`stop`/`restart`/`status` 管理后台进程，PID 与日志统一放在仓库根目录的 `.run/` 下
-（按「服务名-环境」区分）；`run` 是前台阻塞运行，方便调试单个服务，不支持 `all`。
-`prod` 环境要求 funcron/funcoin 已通过 `pip install`/`uv sync` 安装为正式包，未安装会直接报错退出，
-不会回退到仓库源码运行。
+`start`/`stop`/`restart` 管理后台进程，`run` 是前台阻塞运行，方便调试单个服务，不支持 `all`。
+`start`/`stop`/`restart`/`run` 必须显式带 `dev` 或 `prod`；只有 `status` 允许省略环境参数，
+省略时依次报告两个环境。
+
+PID、进程身份记录与日志统一放在仓库根目录的 `.run/` 下（按「服务名-环境」区分）。重复启动检查会
+校验 PID 对应进程的启动时刻与命令特征：进程已退出的陈旧 PID 文件会被清理后继续启动；PID 已被
+其他进程复用时拒绝操作并提示人工确认，不会误杀无关进程。
+
+`prod` 环境要求 funcron / airflow / funcoin 已安装为**正式包**：校验会清空 `PYTHONPATH`、用
+Python 隔离模式导入，并断言模块文件落在 `site-packages` 下，因此 editable 安装（`pip install -e`、
+`uv sync`）或直接从源码工作树运行都会被拒绝；`prod` 下 gunicorn 的配置文件也从已安装包内解析，
+不引用仓库源码。本地源码调试请用 `dev`。
 
 ## 凭据配置
 
@@ -54,6 +68,27 @@ scripts/setup.sh status all
 `funcron/web/login/password`、`funcron/redis/password`、`funcron/notice/error_api_key`、
 `funcron/api/access_token` 和 `funcron/web/flask/secret_key`。缺少登录密码时 Web 登录会拒绝访问；
 缺少 API access token 时 API 会返回配置错误；可选的 Redis 密码和通知 API key 为空时不启用相应认证或通知。
+
+Flask 配置名可取 `development` / `testing` / `production` / `default`，由 `create_app(config_name)`
+显式选择。只有 `development` 会开启 `DEBUG`；`default` 指向生产配置，`testing` 只开 `TESTING`。
+
+## 工作目录
+
+数据库文件、日志与中间文件放在工作目录下，按以下顺序解析：`FUNCRON_APP_DIR` 环境变量 →
+`FUNDATA_APP_DIR` 环境变量 → `/opt/farfarfun/apps/funcron`（当前用户可写时）→ `~/.funcron`。
+显式设置环境变量时按设置值使用，不再做可写性回落。
+
+## 开发
+
+```bash
+uv sync
+uv run pytest
+uv run ruff check
+uv run ruff format --check
+```
+
+源码采用 src 布局（`src/funcron/`），因此在仓库根目录直接 `import funcron` 不会命中工作树，
+需要先 `uv sync` 安装。
 
 ---
 

@@ -1,15 +1,13 @@
 """funcron.center.common.functions 的单测。
 
-`funcron.center.common.config` 依赖 `fundata`，而当前 PyPI 上的 fundata==1.0.1 自身缺失
-`notetool` 依赖会直接 ImportError（这是 fundata 仓库自身的 bug，不在 funcron 里修复）。
-这里用 `pytest.importorskip` 探测：环境可用时正常跑断言，fundata 问题修复前则跳过，
-不让这个已知的上游 bug 挡住其余测试。
+直接 import（不再用 importorskip）：fundata 的工作目录已可回落到用户目录，
+配置模块在非特权环境下也能正常导入，退化时这里应该直接失败而不是跳过。
 """
 
+import flask
 import pytest
 
-flask = pytest.importorskip("flask")
-functions = pytest.importorskip("funcron.center.common.functions")
+from funcron.center.common import functions
 
 
 @pytest.fixture()
