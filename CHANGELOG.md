@@ -2,6 +2,17 @@
 
 本文件记录 funcron 的版本变更，按版本倒序排列。
 
+## [未发布]
+
+### 修复
+
+- `server/port_manage.py`、`tasks/core.py`、`tool/mail.py` 的日志调用误用 stdlib
+  logging 的 `%s` 占位符，farlog（loguru）不支持该语法，参数被静默丢弃；统一改为
+  loguru 的 `{}` 占位符。`center/common/scheduler/cu_gevent_scheduler.py`、
+  `cu_background_scheduler.py`（源自 apscheduler，用 stdlib logging）与
+  `center/pages/crons/core.py` 的 `current_app.logger`（Flask 的 stdlib logger）
+  `%s` 用法本身正确，未改动。
+
 ## [0.5.9] - 2026-10-02
 
 ### 修复

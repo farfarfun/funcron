@@ -103,11 +103,11 @@ class PortManage:
                 s.connect(("8.8.8.8", 80))
                 self.host_inner = s.getsockname()[0]
         except OSError as exc:
-            logger.warning("内网出口 IP 探测失败，回落到 127.0.0.1: %s", exc)
+            logger.warning("内网出口 IP 探测失败，回落到 127.0.0.1: {}", exc)
             self.host_inner = "127.0.0.1"
 
         try:
             self.host_outer = requests.get("http://ifconfig.me/ip", timeout=1).text.strip()
         except requests.RequestException as exc:
-            logger.warning("公网 IP 探测失败，展示为 unknown: %s", exc)
+            logger.warning("公网 IP 探测失败，展示为 unknown: {}", exc)
             self.host_outer = "unknown"

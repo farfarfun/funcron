@@ -10,7 +10,7 @@ logger = getLogger("funcron")
 
 
 def my_job(id="my_job"):
-    logger.info("%s --> %s", id, datetime.now())  # noqa: DTZ005 - 日志里打本地时间便于对照服务器时钟
+    logger.info("{} --> {}", id, datetime.now())  # noqa: DTZ005 - 日志里打本地时间便于对照服务器时钟
 
 
 job_stores = {

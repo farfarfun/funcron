@@ -55,4 +55,4 @@ def send_mail_163(
     with smtplib.SMTP_SSL("smtp.163.com", 994) as smtp:
         smtp.login(sender, password)
         smtp.sendmail(sender, receivers, message.as_string())
-    logger.info("mail sent to %s", receivers)
+    logger.info("mail sent to {}", receivers)
