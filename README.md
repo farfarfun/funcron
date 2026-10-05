@@ -61,6 +61,41 @@ Python 隔离模式导入，并断言模块文件落在 `site-packages` 下，�
 `uv sync`）或直接从源码工作树运行都会被拒绝；`prod` 下 gunicorn 的配置文件也从已安装包内解析，
 不引用仓库源码。本地源码调试请用 `dev`。
 
+## Airflow
+
+仓库内**不保存 `airflow.cfg`**：配置文件一旦写上元数据库连接串，账号密码就会随版本库和
+PyPI 包一起发出去；而 Airflow 的 `dags_folder` / `plugins_folder` / `base_log_folder`
+必须是绝对路径，写进包里就只在某一台机器上成立。
+
+funcron 需要覆盖的配置项统一由 `scripts/lib/funcron-airflow-env.sh` 以
+`AIRFLOW__<SECTION>__<KEY>` 环境变量注入，取值顺序为
+「调用方已导出的环境变量 → `.env` 文件 → 按运行环境推导的默认值」：
+
+| 配置项 | dev 默认值 | prod 默认值 |
+|---|---|---|
+| `AIRFLOW_HOME` | `.run/airflow-dev-home` | `$AIRFLOW_HOME_PROD`（默认 `$HOME/airflow`） |
+| `AIRFLOW__CORE__DAGS_FOLDER` | 源码树 `src/funcron/airflow/dags` | 已安装 funcron 包内的 `airflow/dags` |
+| `AIRFLOW__CORE__PLUGINS_FOLDER` | `$AIRFLOW_HOME/plugins` | 同左 |
+| `AIRFLOW__LOGGING__BASE_LOG_FOLDER` | `$AIRFLOW_HOME/logs` | 同左 |
+| `AIRFLOW__DATABASE__SQL_ALCHEMY_CONN` | 不设置（回落到 `AIRFLOW_HOME` 下的 SQLite） | **必填**，缺失直接拒绝启动 |
+
+凭据写在仓库根目录的 `.env`（不进版本库），模板见 `.env.example`；也可用
+`FUNCRON_ENV_FILE` 指向别处。
+
+首次部署先初始化元数据库，再按上一节启动各角色服务：
+
+```bash
+scripts/airflow-init.sh dev    # 或 prod
+scripts/setup.sh start airflow-scheduler dev
+```
+
+管理员账号由所选 auth manager 负责创建（Airflow 3 默认的 SimpleAuthManager 用
+`AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS` 配置；装了 `apache-airflow-providers-fab`
+时用 `airflow fab-manager create-user`），funcron 不再自带建账号脚本。
+
+`airflow-webserver` 服务底层执行的是 `airflow api-server`——Airflow 3 已移除
+`airflow webserver` 子命令，承载 Web UI 的组件改名为 api-server；对外的服务名保持不变。
+
 ## 凭据配置
 
 数据库密码、Web 登录密码、Redis 密码、通知 API key、API access token、Flask session key

@@ -58,7 +58,7 @@ build-backend = "hatchling.build"
 packages = ["src/funcron"]
 
 [tool.hatch.build.targets.sdist]
-include = ["src/funcron", "tests", "scripts", "README.md", "CHANGELOG.md", "LICENSE"]
+include = ["src/funcron", "tests", "scripts", ".env.example", "README.md", "CHANGELOG.md", "LICENSE"]
 
 [dependency-groups]
 dev = ["pytest>=7.0", "ruff>=0.14.0"]

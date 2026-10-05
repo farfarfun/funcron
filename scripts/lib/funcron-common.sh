@@ -219,3 +219,30 @@ print(resolved)
 PYPATH
   )
 }
+
+# 用法: funcron_installed_package_dir <import_name> <safe_cwd> <relative_path>
+# 与 funcron_installed_package_file 同样的隔离解析方式，但要求目标是**目录**
+# （例如 prod 下 Airflow 要用的 dags/ 目录）。目录不存在时返回非 0。
+funcron_installed_package_dir() {
+  local import_name="$1" safe_cwd="$2" rel="$3"
+  mkdir -p "$safe_cwd"
+  (
+    cd "$safe_cwd" || exit 1
+    PYTHONPATH="" python3 -I - "$import_name" "$rel" <<'PYDIR'
+import importlib
+import sys
+from pathlib import Path
+
+name, rel = sys.argv[1], sys.argv[2]
+module = importlib.import_module(name)
+origin = getattr(module, "__file__", None)
+if origin is None:
+    raise SystemExit(1)
+resolved = Path(origin).resolve().parent / rel
+if not resolved.is_dir():
+    print(f"{resolved} 不是目录或不存在", file=sys.stderr)
+    raise SystemExit(1)
+print(resolved)
+PYDIR
+  )
+}

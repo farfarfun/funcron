@@ -24,9 +24,53 @@
   现按 `(host, port, db)` 分别缓存连接池。
 - `JobLog.job_log_list()` 的参数 `id` 遮蔽内置函数，改名为 `cron_info_id`，
   并与 `cron_list()` 一致支持 `page_size` 与空页码回落；调用方同步更新。
+- **`src/funcron/airflow/airflow.cfg` 随包发布了明文凭据与开发机绝对路径**：
+  `sql_alchemy_conn` 带明文 `funcron:funcron` 账号密码，`[webserver] secret_key`
+  是一个真实值，`dags_folder` / `plugins_folder` / `base_log_folder` 分别指向三台
+  不同机器上的固定路径（其中 `plugins_folder` 指的目录在本仓库根本不存在），而
+  `scripts/services/airflow.sh` 从来没有引用过这个文件，等于只泄露、不生效。
+  现已整文件删除，改由 `scripts/lib/funcron-airflow-env.sh` 按
+  `AIRFLOW__<SECTION>__<KEY>` 环境变量注入配置：目录类配置按脚本自身位置 / 已安装包
+  位置解析，凭据从不进版本库的 `.env` 读取（模板 `.env.example`），prod 缺少
+  `AIRFLOW__DATABASE__SQL_ALCHEMY_CONN` 时直接拒绝启动而不是回落到 SQLite。
+- **`airflow-webserver` 服务在当前依赖下必然起不来**：脚本执行 `airflow webserver`，
+  而 Airflow 3 已移除该子命令（本仓库声明 `apache-airflow>=3.3.1`），运行会直接报
+  `Command 'airflow webserver' has been removed`。改为 `airflow api-server`，
+  对外的服务名保持 `airflow-webserver` 不变。
+- **`src/funcron/airflow/init.sh` 整个跑不通**：`cp airflow.cfg ~/airflow/airflow.cfg`
+  用相对路径（只有恰好 cd 到该目录才成立），`airflow db init` 在 Airflow 3 已移除，
+  后面还串着 `airflow webserver`、`airflow worker` 等早已改名的命令。已重写并移到 `scripts/airflow-init.sh`
+  （放在包里的话，装到 site-packages 后相对路径就不成立了），用法 `scripts/airflow-init.sh <dev|prod>`，
+  复用统一的配置推导并执行 `airflow db migrate`。
+- **默认时区 `GMT+8` 是错的**：那不是 IANA 时区名，按 POSIX TZ 语义解释反而是 UTC-8。
+  新默认值为 `Asia/Shanghai`。
+
+### 移除
+
+- `funcron.airflow.create_account`：`from airflow.contrib.auth.backends.password_auth
+  import PasswordUser` 自 Airflow 2.0 起即不存在（`airflow.contrib` 已整包移除），
+  `airflow.models.User` 同样已删，该模块 import 即 `ModuleNotFoundError`，从未能运行。
+  替代方式：Airflow 3 默认的 SimpleAuthManager 用
+  `AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS` 配置管理员；装了
+  `apache-airflow-providers-fab` 则用 `airflow fab-manager create-user`。
+- `funcron.airflow.webserver_config`：未作任何 funcron 定制的 Airflow 2 模板文件，
+  顶部 `from airflow.www.fab_security.manager import AUTH_DB` 在 Airflow 3 下
+  `ModuleNotFoundError`（`airflow.www` 已移入 FAB provider），且 Airflow 只从
+  `$AIRFLOW_HOME/webserver_config.py` 加载，包里这份从来没被读过。
+  需要定制鉴权时请在 `AIRFLOW_HOME` 下自行放置该文件。
 
 ### 新增
 
+- `.env.example`：Airflow 元数据库连接串、fernet key、Celery broker 等运行时凭据的
+  配置模板；实际的 `.env` 已加入 `.gitignore`。
+- `scripts/lib/funcron-airflow-env.sh`：Airflow 配置推导的唯一入口，被
+  `scripts/services/airflow.sh` 与 `scripts/airflow-init.sh` 共享，
+  保证「初始化」与「运行」用的是同一套配置。
+- `scripts/lib/funcron-common.sh` 新增 `funcron_installed_package_dir`，
+  以与 `funcron_installed_package_file` 相同的隔离方式解析已安装包内的目录。
+- 新增 `tests/test_airflow_env.py`，覆盖「仓库内不得再出现明文连接串与开发机绝对路径」、
+  各 `AIRFLOW__*` 默认值推导、`.env` 与显式环境变量的优先级、prod 缺连接串时拒绝启动，
+  并实跑 `airflow` CLI 确认 `api-server` 存在、`webserver` 确已移除。
 - `center/models.py`、`center/utils/times.py`、`center/utils/redis_cache.py`
   的公开类、函数、方法补齐位于定义体首句的中文 docstring（原先只有游离在
   模块/方法之间的三引号文本，不构成 docstring）。
