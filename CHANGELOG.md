@@ -12,6 +12,26 @@
   `cu_background_scheduler.py`（源自 apscheduler，用 stdlib logging）与
   `center/pages/crons/core.py` 的 `current_app.logger`（Flask 的 stdlib logger）
   `%s` 用法本身正确，未改动。
+- **`JobLog.to_json()` 调用必抛 `AttributeError`**：它返回 `job_id` / `remark` /
+  `traces` / `status` 四个字段，而 `job_log` 表早已不存在这些列。现按实际列
+  （`id`/`log_id`/`cron_info_id`/`content`/`create_time`/`take_time`）重写，
+  并加测试断言返回键集合与表列定义一致，拦住后续字段漂移。
+- **`RedisCache.delete()` 永远删不掉键**：`set()`/`get()` 都按 `f"{prefix}{key}"`
+  读写带前缀的键，只有 `delete()` 直接 `delete(key)`，前缀被漏掉。现统一走
+  `full_key()` 拼接；`clear()` 也改为一次 `delete(*keys)` 并返回实际删除数量。
+- **`RedisCache` 的连接池在不同目标库之间串用**：`hasattr(RedisCache, "pool")`
+  是全类单例，第二次用不同 host/port/db 构造出的实例会静默连到第一次那个库。
+  现按 `(host, port, db)` 分别缓存连接池。
+- `JobLog.job_log_list()` 的参数 `id` 遮蔽内置函数，改名为 `cron_info_id`，
+  并与 `cron_list()` 一致支持 `page_size` 与空页码回落；调用方同步更新。
+
+### 新增
+
+- `center/models.py`、`center/utils/times.py`、`center/utils/redis_cache.py`
+  的公开类、函数、方法补齐位于定义体首句的中文 docstring（原先只有游离在
+  模块/方法之间的三引号文本，不构成 docstring）。
+- 新增 `tests/test_models.py`、`tests/test_redis_cache.py`、`tests/test_times.py`，
+  覆盖上述修复的正常路径、边界与失败路径（Redis 用内存假客户端，不连真实服务）。
 
 ## [0.5.9] - 2026-10-02
 

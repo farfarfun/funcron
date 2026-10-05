@@ -45,9 +45,9 @@ def job_log_list():
     keywords = request.args.to_dict()
 
     page = int(request.args.get("page") or 1)
-    id = request.args.get("id")
+    cron_info_id = request.args.get("id")
 
-    page_data = JobLog.job_log_list(page=page, id=id)
+    page_data = JobLog.job_log_list(page=page, cron_info_id=cron_info_id)
     if "page" in keywords:
         del keywords["page"]
 

@@ -1,9 +1,16 @@
+"""管理后台的 SQLAlchemy 数据模型：定时任务定义与任务执行日志。"""
+
 from sqlalchemy import Column
 
 from funcron.center.app import db
 
 
 class CronInfos(db.Model):
+    """定时任务定义表（`cron_infos`）。
+
+    每行描述一个定时任务：任务名、cron 各时间字段、要回调的 URL 以及运行状态。
+    """
+
     __tablename__ = "cron_infos"
     id: Column = db.Column(db.Integer, primary_key=True)
     task_name: Column = db.Column(db.String(64), nullable=False)
@@ -19,6 +26,15 @@ class CronInfos(db.Model):
 
     @staticmethod
     def cron_list(page=1, task_name=None, page_size=20):
+        """按任务名模糊查询定时任务，并按任务名倒序分页。
+
+        参数:
+            page: 页码，从 1 开始；传入 None/0/空串时按第 1 页处理。
+            task_name: 任务名关键字，为空则不过滤。
+            page_size: 每页条数，默认 20。
+        返回:
+            Flask-SQLAlchemy 的 `Pagination` 对象，`.items` 是本页的 `CronInfos` 列表。
+        """
         page = int(page or 1)
         filter_arr = []
         if task_name:
@@ -31,6 +47,11 @@ class CronInfos(db.Model):
 
 
 class JobLogItems(db.Model):
+    """任务执行日志的明细行（`job_log_items`）。
+
+    一次执行（`JobLog.log_id`）可以追加多条明细内容，用 `log_id` 关联。
+    """
+
     __tablename__ = "job_log_items"
     id: Column = db.Column(db.Integer, primary_key=True)
     log_id: Column = db.Column(db.String(65), index=True, nullable=False)
@@ -38,6 +59,8 @@ class JobLogItems(db.Model):
 
 
 class JobLog(db.Model):
+    """任务执行日志主表（`job_log`），一行对应一次任务执行。"""
+
     __tablename__ = "job_log"
     id: Column = db.Column(db.Integer, primary_key=True)
     log_id: Column = db.Column(
@@ -48,19 +71,36 @@ class JobLog(db.Model):
     create_time: Column = db.Column(db.String(25), nullable=False, default="")
     take_time: Column = db.Column(db.String(25), default="", doc="耗时时间")
 
-    def to_json(self):
+    def to_json(self) -> dict:
+        """把当前这条执行日志序列化成可直接 `jsonify` 的字典。
+
+        返回:
+            含 `id`、`log_id`、`cron_info_id`、`content`、`create_time`、`take_time`
+            六个键的字典，键名与表字段一一对应。
+        """
         return {
             "id": self.id,
-            "job_id": self.job_id,
-            "remark": self.remark,
+            "log_id": self.log_id,
+            "cron_info_id": self.cron_info_id,
             "content": self.content,
-            "traces": self.traces,
-            "status": self.status,
             "create_time": self.create_time,
+            "take_time": self.take_time,
         }
 
     @staticmethod
-    def job_log_list(page, id):
+    def job_log_list(page, cron_info_id, page_size=20):
+        """按定时任务 ID 查询其执行日志，并按主键倒序分页。
+
+        参数:
+            page: 页码，从 1 开始；传入 None/0/空串时按第 1 页处理。
+            cron_info_id: `CronInfos.id`，只返回该任务的执行日志。
+            page_size: 每页条数，默认 20。
+        返回:
+            Flask-SQLAlchemy 的 `Pagination` 对象，`.items` 是本页的 `JobLog` 列表。
+        """
+        page = int(page or 1)
         return (
-            JobLog.query.filter(JobLog.cron_info_id == id).order_by(db.desc(JobLog.id)).paginate(page=page, per_page=20)
+            JobLog.query.filter(JobLog.cron_info_id == cron_info_id)
+            .order_by(db.desc(JobLog.id))
+            .paginate(page=page, per_page=page_size)
         )

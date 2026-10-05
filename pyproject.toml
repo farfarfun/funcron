@@ -85,6 +85,9 @@ ignore = [
 # Airflow 自身的 default_timezone 配置统一解释，这里改成 tz-aware 会改变已有
 # DAG 的调度基准时刻。
 "src/funcron/airflow/dags/*" = ["E402", "F401", "DTZ001"]
+# funcron.center.utils.times 的既定语义就是本机本地时间（见该模块 docstring），
+# 它的测试必须用 naive 本地时间去比对，换成 tz-aware 就验证不到被测行为。
+"tests/test_times.py" = ["DTZ005", "DTZ007", "DTZ011"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
