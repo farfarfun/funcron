@@ -8,8 +8,9 @@
     services    列出 `scripts/setup.sh` 支持的服务名。
 """
 
-import argparse
 from collections.abc import Sequence
+
+import typer
 
 from funcron.server.port_manage import PortManage
 
@@ -25,27 +26,40 @@ SETUP_SERVICES: tuple[str, ...] = (
 
 _SETUP_HINT = (
     "服务的启停请使用仓库内的 scripts/setup.sh，例如:\n"
-    "    scripts/setup.sh start server prod\n"
-    "    scripts/setup.sh run airflow-scheduler dev"
+    "    scripts/setup.sh start server\n"
+    "    scripts/setup.sh run airflow-scheduler"
+)
+
+app = typer.Typer(
+    add_completion=False,
+    epilog=_SETUP_HINT,
+    help="funcron 命令行工具；长期运行服务的启停请使用 scripts/setup.sh。",
+    invoke_without_command=True,
+    no_args_is_help=False,
 )
 
 
-def build_parser() -> argparse.ArgumentParser:
-    """构造 `funcron` 命令行参数解析器。
+@app.callback()
+def main(context: typer.Context) -> None:
+    """funcron 的查询命令。"""
+    if context.invoked_subcommand is None:
+        typer.echo(context.get_help())
+        raise typer.Exit(2)
 
-    返回:
-        配置好 `status` / `services` 两个子命令的 `argparse.ArgumentParser`。
-    """
-    parser = argparse.ArgumentParser(
-        prog="funcron",
-        description="funcron 命令行工具；长期运行服务的启停请使用 scripts/setup.sh。",
-        epilog=_SETUP_HINT,
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-    )
-    subparsers = parser.add_subparsers(dest="command")
-    subparsers.add_parser("status", help="打印本机常用服务端口的可访问状态")
-    subparsers.add_parser("services", help="列出 scripts/setup.sh 支持的服务名")
-    return parser
+
+@app.command()
+def status() -> None:
+    """打印本机常用服务端口的可访问状态。"""
+    PortManage().fprint()
+
+
+@app.command()
+def services() -> None:
+    """列出 scripts/setup.sh 支持的服务名。"""
+    for name in SETUP_SERVICES:
+        typer.echo(name)
+    typer.echo()
+    typer.echo(_SETUP_HINT)
 
 
 def funcron(argv: Sequence[str] | None = None) -> int:
@@ -56,19 +70,11 @@ def funcron(argv: Sequence[str] | None = None) -> int:
     返回:
         进程退出码，0 表示成功，2 表示没有指定子命令（已打印用法）。
     """
-    parser = build_parser()
-    args = parser.parse_args(argv)
-    if args.command == "status":
-        PortManage().fprint()
-        return 0
-    if args.command == "services":
-        for name in SETUP_SERVICES:
-            print(name)
-        print()
-        print(_SETUP_HINT)
-        return 0
-    parser.print_help()
-    return 2
+    try:
+        app(args=list(argv) if argv is not None else None, prog_name="funcron")
+    except SystemExit as exc:
+        return int(exc.code or 0)
+    return 0
 
 
 if __name__ == "__main__":  # pragma: no cover - 手工调试入口

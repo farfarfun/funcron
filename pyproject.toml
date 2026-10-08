@@ -26,6 +26,7 @@ dependencies = [
     "pymysql>=1.2.0",
     "fundata>=1.0.3",
     "funcoin>=1.0.51",
+    "typer>=0.12",
 ]
 
 [[project.authors]]

@@ -13,7 +13,7 @@ pip install funcron
 
 ## 最小可运行示例
 
-安装完成后，`funcron` 命令行提供两个查询类子命令：
+安装完成后，基于 Typer 的 `funcron` 命令行提供两个查询类子命令：
 
 ```bash
 # 查看本机常用服务端口的可访问状态
