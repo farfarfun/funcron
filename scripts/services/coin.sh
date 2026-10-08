@@ -2,7 +2,7 @@
 # funcoin 行情下载任务（长期运行的下载循环，作为后台服务托管）。
 # 由 scripts/setup.sh 统一调度，不要直接执行本脚本管理生命周期。
 #
-# 用法: scripts/services/coin.sh {start|stop|restart|status|run} <dev|prod>
+# 用法: scripts/services/coin.sh {start|stop|restart|status|run}
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -15,35 +15,23 @@ LOG_DIR="$ROOT_DIR/.run/logs"
 mkdir -p "$RUN_DIR" "$LOG_DIR"
 
 ACTION="${1:-}"
-ENV_NAME="${2:-}"
 
 usage() {
-  echo "用法: $0 {start|stop|restart|status|run} <dev|prod>" >&2
+  echo "用法: $0 {start|stop|restart|status|run}" >&2
   exit 1
 }
 
-[[ -n "$ACTION" ]] || usage
-case "$ENV_NAME" in
-  dev | prod) ;;
-  *)
-    echo "错误: 必须指定环境 dev 或 prod" >&2
-    usage
-    ;;
-esac
+[[ -n "$ACTION" && $# -eq 1 ]] || usage
 
-NAME="funcron-coin-${ENV_NAME}"
+NAME="funcron-coin"
 PID_FILE="$(funcron_pid_file "$RUN_DIR" "$NAME")"
 META_FILE="$(funcron_meta_file "$RUN_DIR" "$NAME")"
 LOG_FILE="$(funcron_log_file "$LOG_DIR" "$NAME")"
 IDENTITY="funcoin"
 
 cmd=()
-# prod 下校验 funcoin 是已安装的正式包（不是 editable、不是源码树），
-# 校验放在 command_for 里，保证 start 与 run 两条路径都会执行。
 command_for() {
-  if [[ "$ENV_NAME" == "prod" ]]; then
-    funcron_require_installed_package funcoin "$RUN_DIR"
-  fi
+  funcron_require_installed_package funcoin "$RUN_DIR"
   cmd=(funcoin download)
 }
 
@@ -91,13 +79,14 @@ do_stop() {
 }
 
 do_status() {
-  local state
+  local state version
   state="$(funcron_service_state "$PID_FILE" "$META_FILE" "$IDENTITY")"
+  version="$(funcron_installed_version funcoin)"
   case "$state" in
-    running) echo "${NAME}: running (pid $(cat "$PID_FILE"))" ;;
-    missing) echo "${NAME}: stopped" ;;
-    stale | invalid) echo "${NAME}: stopped (存在陈旧 pid 文件 ${PID_FILE})" ;;
-    mismatch) echo "${NAME}: unknown (pid 文件记录的 PID 已属于其他进程，见 ${PID_FILE})" ;;
+    running) echo "${NAME} ${version}: running (pid $(cat "$PID_FILE"))" ;;
+    missing) echo "${NAME} ${version}: stopped" ;;
+    stale | invalid) echo "${NAME} ${version}: stopped (存在陈旧 pid 文件 ${PID_FILE})" ;;
+    mismatch) echo "${NAME} ${version}: unknown (pid 文件记录的 PID 已属于其他进程，见 ${PID_FILE})" ;;
   esac
 }
 

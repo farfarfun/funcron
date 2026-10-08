@@ -27,39 +27,39 @@ funcron services
 
 ## 服务启动（scripts/setup.sh）
 
-生产环境或本地长期运行各服务，统一通过 `scripts/setup.sh` 管理，按 `动作 → 服务 → 环境` 解析参数：
+生产环境或本地长期运行各服务，统一通过 `scripts/setup.sh` 管理。先安装所需版本，再按 `动作 → 服务` 解析运行参数：
 
 ```bash
-# 用法: scripts/setup.sh {start|stop|restart|run} <service> <dev|prod>
-#       scripts/setup.sh status <service> [dev|prod]
+# 用法: scripts/setup.sh {start|stop|restart|run|status} <service>
 #   <service>: server | airflow-webserver | airflow-scheduler | airflow-worker
 #              | airflow-flower | coin | all
 
-# 后台启动生产环境的 Web 管理后台
-scripts/setup.sh start server prod
+# 构建并安装当前源码，然后后台启动 Web 管理后台
+scripts/setup.sh install-dev
+scripts/setup.sh start server
 
-# 前台运行开发环境的 Airflow scheduler，方便调试
-scripts/setup.sh run airflow-scheduler dev
+# 生产机可安装指定正式版本
+scripts/setup.sh install-prod 0.5.9
 
-# 查看所有服务在 dev 与 prod 两个环境下的状态（status 的环境参数可省略）
+# 前台运行 Airflow scheduler，方便调试
+scripts/setup.sh run airflow-scheduler
+
+# 查看所有服务状态
 scripts/setup.sh status all
-
-# 只看生产环境
-scripts/setup.sh status all prod
 ```
 
 `start`/`stop`/`restart` 管理后台进程，`run` 是前台阻塞运行，方便调试单个服务，不支持 `all`。
-`start`/`stop`/`restart`/`run` 必须显式带 `dev` 或 `prod`；只有 `status` 允许省略环境参数，
-省略时依次报告两个环境。
+运行命令不接受 `dev`/`prod` 参数；当前安装的是本地构建还是正式版本，分别由
+`install-dev` 和 `install-prod [version]` 决定。
 
-PID、进程身份记录与日志统一放在仓库根目录的 `.run/` 下（按「服务名-环境」区分）。重复启动检查会
+PID、进程身份记录与日志统一放在仓库根目录的 `.run/` 下（按服务名区分）。重复启动检查会
 校验 PID 对应进程的启动时刻与命令特征：进程已退出的陈旧 PID 文件会被清理后继续启动；PID 已被
 其他进程复用时拒绝操作并提示人工确认，不会误杀无关进程。
 
-`prod` 环境要求 funcron / airflow / funcoin 已安装为**正式包**：校验会清空 `PYTHONPATH`、用
+运行服务要求 funcron / airflow / funcoin 已安装为非 editable 包：校验会清空 `PYTHONPATH`、用
 Python 隔离模式导入，并断言模块文件落在 `site-packages` 下，因此 editable 安装（`pip install -e`、
-`uv sync`）或直接从源码工作树运行都会被拒绝；`prod` 下 gunicorn 的配置文件也从已安装包内解析，
-不引用仓库源码。本地源码调试请用 `dev`。
+`uv sync`）或直接从源码工作树运行都会被拒绝；gunicorn 的配置文件也从已安装包内解析，
+不引用仓库源码。
 
 ## Airflow
 
@@ -85,8 +85,8 @@ funcron 需要覆盖的配置项统一由 `scripts/lib/funcron-airflow-env.sh` �
 首次部署先初始化元数据库，再按上一节启动各角色服务：
 
 ```bash
-scripts/airflow-init.sh dev    # 或 prod
-scripts/setup.sh start airflow-scheduler dev
+scripts/airflow-init.sh prod
+scripts/setup.sh start airflow-scheduler
 ```
 
 管理员账号由所选 auth manager 负责创建（Airflow 3 默认的 SimpleAuthManager 用

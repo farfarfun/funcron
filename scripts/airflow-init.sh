@@ -10,7 +10,7 @@
 # AIRFLOW__* 环境变量推导，凭据写在仓库根目录的 .env 里（模板见 .env.example）。
 #
 # 初始化完成后，各长期运行服务统一用：
-#   scripts/setup.sh start {airflow-webserver|airflow-scheduler|airflow-worker|airflow-flower} <dev|prod>
+#   scripts/setup.sh start {airflow-webserver|airflow-scheduler|airflow-worker|airflow-flower}
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

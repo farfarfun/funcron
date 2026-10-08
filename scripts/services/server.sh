@@ -2,7 +2,7 @@
 # funcron 自身的 Flask 管理后台（gunicorn + gevent worker）。
 # 由 scripts/setup.sh 统一调度，不要直接执行本脚本管理生命周期。
 #
-# 用法: scripts/services/server.sh {start|stop|restart|status|run} <dev|prod>
+# 用法: scripts/services/server.sh {start|stop|restart|status|run}
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -14,36 +14,21 @@ RUN_DIR="$ROOT_DIR/.run"
 LOG_DIR="$ROOT_DIR/.run/logs"
 mkdir -p "$RUN_DIR" "$LOG_DIR"
 
-# ---- 配置块：dev/prod 各自的端口 ----
-SERVER_PORT_PROD=8445
-SERVER_PORT_DEV=18445
+# ---- 配置块 ----
+SERVER_PORT="${FUNCRON_SERVER_PORT:-8445}"
 
 WSGI_APP="funcron.server.funcron_server:app"
 
 ACTION="${1:-}"
-ENV_NAME="${2:-}"
 
 usage() {
-  echo "用法: $0 {start|stop|restart|status|run} <dev|prod>" >&2
+  echo "用法: $0 {start|stop|restart|status|run}" >&2
   exit 1
 }
 
-[[ -n "$ACTION" ]] || usage
-case "$ENV_NAME" in
-  dev | prod) ;;
-  *)
-    echo "错误: 必须指定环境 dev 或 prod" >&2
-    usage
-    ;;
-esac
+[[ -n "$ACTION" && $# -eq 1 ]] || usage
 
-if [[ "$ENV_NAME" == "prod" ]]; then
-  SERVER_PORT="$SERVER_PORT_PROD"
-else
-  SERVER_PORT="$SERVER_PORT_DEV"
-fi
-
-NAME="funcron-server-${ENV_NAME}"
+NAME="funcron-server"
 PID_FILE="$(funcron_pid_file "$RUN_DIR" "$NAME")"
 META_FILE="$(funcron_meta_file "$RUN_DIR" "$NAME")"
 LOG_FILE="$(funcron_log_file "$LOG_DIR" "$NAME")"
@@ -52,18 +37,12 @@ LOG_FILE="$(funcron_log_file "$LOG_DIR" "$NAME")"
 IDENTITY="$WSGI_APP"
 
 cmd=()
-# 构造实际执行命令。prod 下先硬校验「funcron 是已安装的正式包」，
-# gunicorn 配置文件也取自安装包内，不引用仓库源码目录。
-# 校验下沉到这里（而不是脚本顶层），保证 start 和 run 两条路径都会走到。
+# start/run 只使用当前已安装的包，不引用仓库源码目录。
 command_for() {
-  if [[ "$ENV_NAME" == "prod" ]]; then
-    funcron_require_installed_package funcron "$RUN_DIR"
-    local gunicorn_conf
-    gunicorn_conf="$(funcron_installed_package_file funcron "$RUN_DIR" "server/config.py")"
-    cmd=(gunicorn -c "$gunicorn_conf" -b "0.0.0.0:${SERVER_PORT}" "$WSGI_APP")
-  else
-    cmd=(gunicorn -c "$ROOT_DIR/src/funcron/server/config.py" -b "0.0.0.0:${SERVER_PORT}" "$WSGI_APP")
-  fi
+  funcron_require_installed_package funcron "$RUN_DIR"
+  local gunicorn_conf
+  gunicorn_conf="$(funcron_installed_package_file funcron "$RUN_DIR" "server/config.py")"
+  cmd=(gunicorn -c "$gunicorn_conf" -b "0.0.0.0:${SERVER_PORT}" "$WSGI_APP")
 }
 
 do_start() {
@@ -110,13 +89,14 @@ do_stop() {
 }
 
 do_status() {
-  local state
+  local state version
   state="$(funcron_service_state "$PID_FILE" "$META_FILE" "$IDENTITY")"
+  version="$(funcron_installed_version funcron)"
   case "$state" in
-    running) echo "${NAME}: running (pid $(cat "$PID_FILE"), port ${SERVER_PORT})" ;;
-    missing) echo "${NAME}: stopped" ;;
-    stale | invalid) echo "${NAME}: stopped (存在陈旧 pid 文件 ${PID_FILE})" ;;
-    mismatch) echo "${NAME}: unknown (pid 文件记录的 PID 已属于其他进程，见 ${PID_FILE})" ;;
+    running) echo "${NAME} ${version}: running (pid $(cat "$PID_FILE"), port ${SERVER_PORT})" ;;
+    missing) echo "${NAME} ${version}: stopped" ;;
+    stale | invalid) echo "${NAME} ${version}: stopped (存在陈旧 pid 文件 ${PID_FILE})" ;;
+    mismatch) echo "${NAME} ${version}: unknown (pid 文件记录的 PID 已属于其他进程，见 ${PID_FILE})" ;;
   esac
 }
 

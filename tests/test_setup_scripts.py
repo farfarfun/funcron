@@ -1,6 +1,6 @@
 """`scripts/setup.sh` 与 `scripts/lib/funcron-common.sh` 的行为测试。
 
-覆盖：参数解析（动作/服务/环境的合法与非法组合）、status 的前后台语义、
+覆盖：参数解析（动作/服务的合法与非法组合）、status 的前后台语义、
 重复启动检查对「陈旧 pid 文件 / 进程存活 / PID 被其他进程复用」的区分，
 以及 prod 生产包校验对 editable / 源码树安装的拒绝。
 """
@@ -48,32 +48,25 @@ def test_setup_no_args_shows_usage(repo_root):
 
 
 def test_setup_rejects_unknown_action(repo_root):
-    result = run_setup(repo_root, "launch", "server", "dev")
+    result = run_setup(repo_root, "launch", "server")
     assert result.returncode == 1
     assert "未知动作" in result.stderr
 
 
 def test_setup_rejects_unknown_service(repo_root):
-    result = run_setup(repo_root, "status", "no-such-service", "dev")
+    result = run_setup(repo_root, "status", "no-such-service")
     assert result.returncode == 1
     assert "未知服务" in result.stderr
 
 
-def test_setup_rejects_unknown_env(repo_root):
-    result = run_setup(repo_root, "start", "server", "staging")
+def test_setup_rejects_extra_environment_argument(repo_root):
+    result = run_setup(repo_root, "start", "server", "prod")
     assert result.returncode == 1
-    assert "dev" in result.stderr and "prod" in result.stderr
-
-
-def test_setup_start_requires_env(repo_root):
-    """start/stop/restart/run 必须显式带环境参数，不允许省略。"""
-    result = run_setup(repo_root, "start", "server")
-    assert result.returncode == 1
-    assert "必须指定环境" in result.stderr
+    assert "用法" in result.stderr
 
 
 def test_setup_run_rejects_all(repo_root):
-    result = run_setup(repo_root, "run", "all", "dev")
+    result = run_setup(repo_root, "run", "all")
     assert result.returncode == 1
     assert "不支持 all" in result.stderr
 
@@ -81,21 +74,21 @@ def test_setup_run_rejects_all(repo_root):
 # ---------------- status 行为（README 示例必须真的能跑） ----------------
 
 
-def test_setup_status_all_without_env_reports_both_envs(repo_root):
-    """README 里的 `scripts/setup.sh status all` 必须成功，并覆盖 dev 与 prod。"""
+def test_setup_status_all_reports_every_service(repo_root):
+    """README 里的 `scripts/setup.sh status all` 必须报告每个服务。"""
     result = run_setup(repo_root, "status", "all")
     assert result.returncode == 0, result.stderr
-    for env_name in ("dev", "prod"):
-        assert f"funcron-server-{env_name}" in result.stdout
-        assert f"funcron-coin-{env_name}" in result.stdout
-        for role in ("webserver", "scheduler", "worker", "flower"):
-            assert f"funcron-airflow-{role}-{env_name}" in result.stdout
+    assert "funcron-server" in result.stdout
+    assert "funcron-coin" in result.stdout
+    for role in ("webserver", "scheduler", "worker", "flower"):
+        assert f"funcron-airflow-{role}" in result.stdout
 
 
-def test_setup_status_single_service_single_env(repo_root):
-    result = run_setup(repo_root, "status", "server", "dev")
+def test_setup_status_single_service(repo_root):
+    result = run_setup(repo_root, "status", "server")
     assert result.returncode == 0, result.stderr
-    assert result.stdout.strip() == "funcron-server-dev: stopped"
+    assert result.stdout.strip().startswith("funcron-server ")
+    assert result.stdout.strip().endswith(": stopped")
 
 
 # ---------------- 重复启动检查：三种状态必须区分开 ----------------

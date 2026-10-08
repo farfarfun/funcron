@@ -145,8 +145,17 @@ funcron_clear_stale() {
   return 0
 }
 
+funcron_installed_version() {
+  python3 -I - "$1" <<'PYVERSION' 2>/dev/null || printf '未安装\n'
+import importlib.metadata
+import sys
+
+print(importlib.metadata.version(sys.argv[1]))
+PYVERSION
+}
+
 # 用法: funcron_require_installed_package <import_name> <safe_cwd>
-# prod 启动前校验：确认 <import_name> 解析到的是**已安装的正式包**，而不是仓库源码树。
+# 启动前确认 <import_name> 解析到的是已安装包，而不是仓库源码树。
 #
 # 为什么不能只用 `python3 -c "import X"`：
 #   1) 从仓库根目录运行时 CWD 在 sys.path 里，裸 import 可能命中工作树里的源码目录；
@@ -185,9 +194,8 @@ if not any(part in ("site-packages", "dist-packages") for part in resolved.parts
 print(resolved)
 PYCHECK
   ); then
-    echo "错误: prod 要求运行已安装的 ${import_name} 正式包，当前校验未通过。" >&2
-    echo "      请执行 pip install ${import_name}（不要用 -e）后再启动 prod；" >&2
-    echo "      本地源码调试请改用 dev 环境。" >&2
+    echo "错误: 要求运行已安装的 ${import_name} 包，当前校验未通过。" >&2
+    echo "      请先执行 install-dev 或 install-prod，不要使用 editable 安装。" >&2
     return 1
   fi
   return 0
