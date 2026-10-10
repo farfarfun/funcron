@@ -7,7 +7,7 @@
 """
 
 import json
-from typing import ClassVar
+from typing import Any, ClassVar
 
 import redis
 from flask import current_app
@@ -23,7 +23,14 @@ class RedisCache:
     #: 按 (host, port, db) 缓存的连接池，避免同一目标库重复建池。
     _pools: ClassVar[dict[tuple[str, int, int], redis.ConnectionPool]] = {}
 
-    def __init__(self, host=None, port=None, db=None, password=None, prefix=None):
+    def __init__(
+        self,
+        host: str | None = None,
+        port: int | str | None = None,
+        db: int | str | None = None,
+        password: str | None = None,
+        prefix: str | None = None,
+    ) -> None:
         """创建缓存客户端。
 
         参数:
@@ -37,7 +44,9 @@ class RedisCache:
         self._connection = redis.Redis(connection_pool=self.create_pool(host, port, db, password))
 
     @classmethod
-    def create_pool(cls, host, port, db, password) -> redis.ConnectionPool:
+    def create_pool(
+        cls, host: str | None, port: int | str | None, db: int | str | None, password: str | None
+    ) -> redis.ConnectionPool:
         """按连接参数取出（必要时新建）连接池。
 
         参数:
@@ -65,7 +74,7 @@ class RedisCache:
             cls._pools[pool_key] = pool
         return pool
 
-    def full_key(self, key) -> str:
+    def full_key(self, key: str) -> str:
         """返回业务键 `key` 实际写入 Redis 的完整键名（即加上实例前缀后的结果）。"""
         return f"{self.prefix or ''}{key}"
 
@@ -73,7 +82,7 @@ class RedisCache:
         """返回底层的 `redis.Redis` 实例，供需要原生命令时使用（不做前缀处理）。"""
         return self._connection
 
-    def set(self, key, value, timeout=None):
+    def set(self, key: str, value: Any, timeout: int | None = None) -> bool:
         """写入缓存。
 
         参数:
@@ -85,11 +94,11 @@ class RedisCache:
         """
         return self._connection.set(self.full_key(key), json.dumps({"value": value}), ex=timeout)
 
-    def add(self, key, value, timeout=None):
+    def add(self, key: str, value: Any, timeout: int | None = None) -> bool:
         """`set()` 的别名，行为完全一致，保留以兼容既有调用。"""
         return self.set(key, value, timeout)
 
-    def get(self, key):
+    def get(self, key: str) -> Any:
         """读取缓存。
 
         参数:
@@ -104,7 +113,7 @@ class RedisCache:
             ret_data = ret_data.decode("utf-8")
         return json.loads(ret_data)["value"]
 
-    def delete(self, key):
+    def delete(self, key: str) -> int:
         """删除单个缓存键。
 
         参数:
@@ -114,7 +123,7 @@ class RedisCache:
         """
         return self._connection.delete(self.full_key(key))
 
-    def clear(self, prefix=None):
+    def clear(self, prefix: str | None = None) -> int:
         """按前缀批量删除缓存键。
 
         参数:

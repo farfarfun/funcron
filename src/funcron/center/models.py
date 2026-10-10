@@ -1,5 +1,7 @@
 """管理后台的 SQLAlchemy 数据模型：定时任务定义与任务执行日志。"""
 
+from typing import Any
+
 from sqlalchemy import Column
 
 from funcron.center.app import db
@@ -25,7 +27,7 @@ class CronInfos(db.Model):
     status: Column = db.Column(db.SMALLINT, default=True, doc="运行状态，0停止1运行中-1结束任务")
 
     @staticmethod
-    def cron_list(page=1, task_name=None, page_size=20):
+    def cron_list(page: int | str | None = 1, task_name: str | None = None, page_size: int = 20) -> Any:
         """按任务名模糊查询定时任务，并按任务名倒序分页。
 
         参数:
@@ -88,7 +90,7 @@ class JobLog(db.Model):
         }
 
     @staticmethod
-    def job_log_list(page, cron_info_id, page_size=20):
+    def job_log_list(page: int | str | None, cron_info_id: int | str, page_size: int = 20) -> Any:
         """按定时任务 ID 查询其执行日志，并按主键倒序分页。
 
         参数:
