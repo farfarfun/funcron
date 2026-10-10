@@ -25,6 +25,16 @@ funcron services
 
 长期运行服务的启停不走 CLI，统一由 `scripts/setup.sh` 管理，见下一节。
 
+`scripts/` 是源码仓库和 source distribution 附带的运维脚本，不会安装到 PyPI
+wheel 中。通过 `pip install funcron` 或 `uv add funcron` 安装后只能使用上述
+`funcron` CLI；需要运行服务脚本时，请获取源码并在仓库根目录执行：
+
+```bash
+git clone https://github.com/farfarfun/funcron.git
+cd funcron
+scripts/setup.sh install-dev
+```
+
 ## 服务启动（scripts/setup.sh）
 
 生产环境或本地长期运行各服务，统一通过 `scripts/setup.sh` 管理。先安装所需版本，再按 `动作 → 服务` 解析运行参数：
@@ -137,3 +147,12 @@ uv run ruff format --check
 - 📧 联系：farfarfun@qq.com
 
 本项目基于 [MIT](LICENSE) 协议开源。
+
+## 第三方组件
+
+| 组件 | 版本 | 来源 | 原始许可证 |
+| --- | --- | --- | --- |
+| artDialog | 4.1.6 | [artDialog 项目](http://code.google.com/p/artdialog/)（TangBin，2009-2012） | [GNU LGPL-2.1-or-later](http://creativecommons.org/licenses/LGPL/2.1/) |
+
+artDialog 的分发文件位于 `src/funcron/center/static/js/artDialog/`；其中保留了原始
+版权与许可证声明。

@@ -5,7 +5,7 @@ from typing import Any
 import redis
 import requests
 from farlog import getLogger
-from flask import jsonify
+from flask import Response, jsonify
 
 from funcron.center.common.config import get_config, get_config_value
 
@@ -33,7 +33,7 @@ def wechat_info_err(titile: str, content: str = "") -> None:
         logger.error(f"推送有BUG【{e}】")
 
 
-def web_api_return(code: int, msg: str = "ok", url: str = ""):
+def web_api_return(code: int, msg: str = "ok", url: str = "") -> Response:
     """构造统一的 Web API JSON 响应。
 
     参数:
@@ -46,7 +46,7 @@ def web_api_return(code: int, msg: str = "ok", url: str = ""):
     return jsonify({"errcode": code, "errmsg": msg, "url": url})
 
 
-def dict2string(dict_data: dict, separator: str = "&&") -> str:
+def dict2string(dict_data: dict[Any, Any], separator: str = "&&") -> str:
     """将字典拼接为 `key=value` 用分隔符连接的字符串（用于生成简单的缓存 key 等场景）。
 
     参数:
