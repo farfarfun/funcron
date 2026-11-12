@@ -49,7 +49,7 @@ scripts/setup.sh install-dev
 scripts/setup.sh start server
 
 # 生产机可安装指定正式版本
-scripts/setup.sh install-prod 0.5.9
+scripts/setup.sh install-prod 0.5.10
 
 # 前台运行 Airflow scheduler，方便调试
 scripts/setup.sh run airflow-scheduler

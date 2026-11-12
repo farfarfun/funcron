@@ -2,10 +2,11 @@
 
 本文件记录 funcron 的版本变更，按版本倒序排列。
 
-## [未发布]
+## [0.5.10] - 2026-11-12
 
 ### 修复
 
+- 构建时排除本机生成的 `src/funcron/airflow/airflow.cfg`，避免配置中的密钥再次进入 wheel 或 sdist；0.5.9 已发布产物仍需单独处置。
 - `server/port_manage.py`、`tasks/core.py`、`tool/mail.py` 的日志调用误用 stdlib
   logging 的 `%s` 占位符，farlog（loguru）不支持该语法，参数被静默丢弃；统一改为
   loguru 的 `{}` 占位符。`center/common/scheduler/cu_gevent_scheduler.py`、
